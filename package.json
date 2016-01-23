@@ -1,0 +1,27 @@
+{
+  "name": "express-permit",
+  "version": "1.0.0",
+  "description": "Adds a permit method to app for easy permission handling and labeling",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/r-tanner-f/express-permit.git"
+  },
+  "keywords": [
+    "Express",
+    "Permissions",
+    "Authorization"
+  ],
+  "author": "Tanner Faulkner",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/r-tanner-f/express-permit/issues"
+  },
+  "homepage": "https://github.com/r-tanner-f/express-permit#readme",
+  "devDependencies": {
+    "express": "^4.13.4"
+  }
+}

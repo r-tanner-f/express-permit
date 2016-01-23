@@ -1,0 +1,6 @@
+**/libs/**
+**/bootstrap/**
+**/node_modules/**
+**/utilities/**
+**/coverage/**
+**/js/pages/**
