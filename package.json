@@ -22,7 +22,10 @@
   },
   "homepage": "https://github.com/r-tanner-f/express-permit#readme",
   "devDependencies": {
+    "chai": "^3.4.1",
     "express": "^4.13.4",
-    "express-session": "^1.13.0"
+    "express-session": "^1.13.0",
+    "rewire": "^2.5.1",
+    "supertest": "^1.1.0"
   }
 }

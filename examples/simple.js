@@ -15,6 +15,7 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
 }));
+
 app.use(permissions({
   //store: new MongoPermits(options)
   store: new MemoryPermits({
@@ -25,7 +26,7 @@ app.use(permissions({
       'have-fun' : false,
     },
   }),
-  username: 'req.session.username'
+  username: 'req.session.username',
 }));
 
 router.get('/', permit('have-fun'), function(req, res) {
