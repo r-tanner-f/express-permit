@@ -12,6 +12,7 @@
         "afterEach"  : false,
         "next"       : false
     },
+    "esversion" : 6,
     "node"    : true,
     "boss"    : false,
     "curly"   : false,
