@@ -1,9 +1,8 @@
 'use strict';
 
-var util = require('util');
 var traverse = require('traverse');
 
-function expressPermit (options) {
+function expressPermit(options) {
   var store = options.store;
 
   return function(req, res, next) {
@@ -12,70 +11,103 @@ function expressPermit (options) {
   };
 }
 
-expressPermit.tag = function initPermit(arg, group) {
-  function trackedPermit (name) {
-    let router = arg;
+class Tagger { //jshint ignore:line
+  constructor() {
+
+    // Three possible inputs
+    // A group:
+    if (typeof arguments[0] === 'string') {
+      this.defaultGroup = arguments[0];
+    }
+
+    // A router:
+    else if (typeof arguments[0] === 'function' && !arguments[1]) {
+      this.defaultGroup = 'root';
+      this.router = arguments[0];
+    }
+
+    // A router and a group:
+    else if (
+      typeof arguments[0] === 'function' &&
+      typeof arguments[1] === 'string'
+    ) {
+      this.router = arguments[0];
+      this.defaultGroup  = arguments[1];
+    } else {
+      throw new Error('Tag called with invalid parameters.\n' +
+                       'Got ' + arguments[0] + ', ' + arguments[1] + '.\n' +
+                       'Need a router, group, or router + group.');
+    }
+  }
+
+  tag(action, group) {
+    group = group ? group : this.defaultGroup;
+
+    // If this a tracked tag
+    if (this.router) {
+      this._trackTag(action, group);
+    }
+
+    return check(action, group);
+  }
+
+  _trackTag(action, group) {
+    group = group ? group : this.defaultGroup;
+    let router = this.router;
 
     // If the router doesn't already have permissions on it, create a new map
-    if(!router.permissions) {
-      router.permissions = new Map;
+    if (!router.permissions) {
+      router.permissions = new Map();
     }
 
     let permissions = router.permissions;
 
     //Does the router's permissions have the group?
-    if(!permissions.has(group)) {
+    if (!permissions.has(group)) {
 
       // Add a new set if not
-      permissions.set(group, new Set([name]));
+      permissions.set(group, new Set([action]));
     }
 
-    // Get the group and add the permission to the Set 
+    // Get the group and add the permission to the Set
     else {
-      permissions.get(group).add(name);
+      permissions.get(group).add(action);
     }
+  }
+}
 
-    // Reset arg for permitCheck to use
-    // This feels hacky
-    arg = name;
-    return permitCheck;
+expressPermit.tagger = Tagger;
+
+function check(action, group) {
+  if (!group) {group = 'root';}
+
+  return function permitCheck(req, res, next) {
+      if (
+        !req.permits ||
+        !req.permits[group] ||
+        !req.permits[group][action]
+      ) {
+        next('Permissions Error');
+      }
+
+      next();
+    };
+}
+
+expressPermit.check = check;
+
+function initTag() {
+  // If params were sent backwards, be kind and rewind
+  if (typeof arguments[0] === 'string' && typeof arguments[1] === 'function') {
+    let tagger = new Tagger(arguments[1], arguments[0]);
+    return tagger.tag.bind(tagger);
   }
 
-  function permitCheck (req, res, next) {
-    let action = arg;
-    if (!req.permits || !req.permits[group] || !req.permits[group][action]) {
-      next('Permissions Error');
-    }
-    next();
-  }
+  let tagger = new Tagger(...arguments);
+  return tagger.tag.bind(tagger);
+}
 
-  if(!group) {
-    group = '_root';
-  }
-
-  if (typeof arg === 'string' ) {
-    return permitCheck;
-  }
-
-  // If we get passed a router or app, return a trackedPermit function
-  else if (typeof arg === 'function') {
-    return trackedPermit;
-  }
-
-  // Throw if we didn't return anything
-  var err = new Error('permit received invalid argument type: ' + typeof arg + 
-                      '. Need a string, or a router/app if saving permissions');
-  Error.captureStackTrace(err, initPermit);
-  throw err;
-};
-
-expressPermit.tag.group = function permitGroup(group, router) {
-  var tag = expressPermit.tag;
-  if (router) {
-    tag = tag(router); 
-  }
-  return name => tag(name, group);
-};
+expressPermit.tag = initTag;
 
 function permitMap(req, res, next) {
   var map = new Map();
@@ -85,20 +117,16 @@ function permitMap(req, res, next) {
     // Check if the node we're looking at is a permissions object
     if (node && node.permissions) {
 
-      var permissions = node.permissions;
-
       //Iterate over the permissions Map
       node.permissions.forEach(function(actions, group) {
 
-        // If the map doesn't currently have that group, add it 
+        // If the map doesn't currently have that group, add it
         if (!map.has(group)) {
           map.set(group, actions);
-        }
-        else {
-
+        } else {
           // If it does have the group, combine the sets
           var set = map.get(group);
-          set = new Set([...set, actions]); 
+          set = new Set([...set, actions]);
         }
       });
     }
@@ -106,7 +134,7 @@ function permitMap(req, res, next) {
 
   var permissionSet = {root: []};
 
-  map.forEach(function(set, key){
+  map.forEach(function(set, key) {
 
     // Combine _root and root.
     // Separated to differentiate between implicit and explicit root.
@@ -122,11 +150,9 @@ function permitMap(req, res, next) {
     permissionSet[key] = permissionSet[key].concat(Array.from(set));
   });
 
-  res.locals.permissionSet = permissionSet; 
+  res.locals.permissionSet = permissionSet;
   next();
 }
-
-expressPermit.tag.tree = permitMap;
 
 expressPermit.tree = permitMap;
 
