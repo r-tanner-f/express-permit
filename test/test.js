@@ -7,6 +7,7 @@ var simple         = require('./fixtures/simple');
 var group          = require('./fixtures/group');
 var trackedSimple  = require('./fixtures/trackedSimple');
 var trackedGroup   = require('./fixtures/trackedGroup');
+
 //var complex        = require('./fixtures/complex');
 
 var sharedBehavior = require('./fixtures/sharedBehavior.js');
@@ -24,7 +25,7 @@ describe('Tracked simple use', function() {
   it('should create a permissions tree', function(done) {
     var agent = supertest.agent(trackedSimple);
 
-    var expectedSimpleMap = {'root': ['have-fun']}; 
+    var expectedSimpleMap = {root: ['haveFun']};
     testTree(agent, expectedSimpleMap, done);
   });
 });
@@ -35,7 +36,7 @@ describe('Tracked group use', function() {
 
 describe('Complex use', function() {
   //sharedBehavior(complex);
-})
+});
 
 function testTree(agent, expectedTree, done) {
   login(agent, function(err, agent) {
@@ -43,7 +44,7 @@ function testTree(agent, expectedTree, done) {
     .get('/tree')
     .expect(200)
     .end(function(err, res) {
-      expect(res.body).to.deep.equal(expectedTree); 
+      expect(res.body).to.deep.equal(expectedTree);
       done();
     });
   });
@@ -57,11 +58,9 @@ function login(agent, callback) {
     if (err) throw err;
     agent
     .get('/')
-    .expect(200) 
+    .expect(200)
     .end(function(err) {
       callback(err, agent);
     });
   });
 }
-
-

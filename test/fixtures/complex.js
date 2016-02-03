@@ -23,7 +23,8 @@ baseRouter.use(root('enter-park'));
 baseRouter.get('/ticket-booth', function(req, res) {
   if (req.permits && req.permits.boring) {
     return res.send('you may enter, but you are only allowed to be bored!');
-  } 
+  }
+
   res.send('you may enter!!');
 });
 
@@ -33,41 +34,42 @@ amusementRouter.get('/rides', amusement('go-on-rides'), function(req, res) {
 
 amusementRouter.get('/popcorn', amusement('eat-popcorn'), function(req, res) {
   res.send('omnomnomnomnom');
-})
+});
 
 boringRouter.get('/twiddle', boring('be-bored'), function(req, res) {
   res.send('twiddling thumbs is actually entertaining after a few hours...');
-})
+});
 
 boringRouter.get('/shuffle-dirt', boring('be-bored'), function(req, res) {
   res.send('*cough* cough*');
-})
-
-moarAmusementRouter.get('/games', moarAmusement('play-games'), 
-  function(req, res) {
-    res.send('I think these might be rigged...');  
 });
+
+moarAmusementRouter.get('/games', moarAmusement('play-games'),
+  function(req, res) {
+    res.send('I think these might be rigged...');
+  }
+);
 
 moarBoringRouter.get('/look-bored', moarBoring('be-boring'),
   function(req, res) {
     res.send('I\'m boooooored.');
   }
-)
+);
 
 baseRouter.use(
   amusementRouter, moarAmusementRouter, boringRouter, moarBoringRouter
 );
 
 var app = require('./common')(baseRouter, {
-      'awesome-user' : {
-        'amusement' : {
-          'have-fun' : true,
-        }
+      awesomeUser: {
+        amusement: {
+          haveFun: true,
+        },
       },
-      'terrible-user' : {
-        'amusement' : {
-          'have-fun' : false,
-        }
+      terribleUser: {
+        amusement: {
+          haveFun: false,
+        },
       },
     });
 

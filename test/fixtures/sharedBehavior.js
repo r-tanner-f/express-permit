@@ -19,10 +19,10 @@ module.exports = function(app) {
       if (err) throw err;
       agent
       .get('/')
-      .expect(200, done); 
+      .expect(200, done);
     });
   });
-  
+
   it('should forbid access to terrible-user', function(done) {
     var agent = supertest.agent(app);
 

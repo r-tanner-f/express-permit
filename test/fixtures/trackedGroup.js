@@ -5,20 +5,20 @@ var router = Express.Router();
 
 var permit = require('../../src/index.js').tag(router, 'amusement');
 
-router.get('/', permit('have-fun'), function(req, res) {
+router.get('/', permit('haveFun'), function(req, res) {
   res.send('yaaay');
 });
 
 var app = require('./common')(router, {
-      'awesome-user' : {
-        'amusement' : {
-          'have-fun' : true,
-        }
+      awesomeUser: {
+        amusement: {
+          haveFun: true,
+        },
       },
-      'terrible-user' : {
-        'amusement' : {
-          'have-fun' : false,
-        }
+      terribleUser: {
+        amusement: {
+          haveFun: false,
+        },
       },
     });
 

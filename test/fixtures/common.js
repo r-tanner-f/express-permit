@@ -19,17 +19,17 @@ module.exports = function(router, users) {
   app.use(permissions({
     //store: new MongoPermits(options)
     store: new InMemoryPermits(users),
-    username: 'req.session.username'
+    username: 'req.session.username',
   }));
 
   app.get('/login/awesome-user', function(req, res) {
-    req.session.username = 'awesome-user';
-    res.send('Logged in as awesome-user');
+    req.session.username = 'awesomeUser';
+    res.send('Logged in as awesomeUser');
   });
 
   app.get('/login/terrible-user', function(req, res) {
-    req.session.username = 'terrible-user';
-    res.send('Logged in as terrible-user');
+    req.session.username = 'terribleUser';
+    res.send('Logged in as terribleUser');
   });
 
   app.use(router);
@@ -37,6 +37,7 @@ module.exports = function(router, users) {
   // Error handler
   app.use(function(err, req, res, next) { //jshint ignore:line
     if (err !== 'Permissions Erorr') {next(err);}
+
     res.status(403).send('Go away!!');
   });
 
