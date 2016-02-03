@@ -5,7 +5,7 @@
 ### Simple 
 
 ``` javascript
-var permit = require('express-permit').tag;
+var permit = require('express-permit').check;
 
 app.get('/', permit('have-fun'), function(req, res, next) {
   res.send('wheee!!');
@@ -24,25 +24,24 @@ app.get('/', permit('have-fun', 'amusement'), function(req, res, next) {
 
 ### Tracked Usage
 
-
-#### Simple
-
-``` javascript
-var permit = require('express-permit').tag(router);
-
-router.get('/', permit('have-fun'), function(req, res, next) {
-  res.send('wheee!!');
-})
-```
-
 #### Groups
 
 ``` javascript
-var permit = require('express-permit').tag(router, '');
+var permit = require('express-permit').tag(router, 'amusement');
 
 app.get('/', permit('have-fun'), function(req, res, next) {
   res.send('wheee!!');
 })
+```
+
+or...
+
+``` javascript 
+var permit = require('express-permit').tag(router);
+
+app.get('/', permit('have-fun', 'amusement', function(req, res, next) {
+  res.send('yaaay!!');
+}))
 ```
 
 ## Misc Examples
