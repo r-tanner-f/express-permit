@@ -36,9 +36,9 @@ module.exports = function(router, users) {
 
   // Error handler
   app.use(function(err, req, res, next) { //jshint ignore:line
-    if (err !== 'Permissions Erorr') {next(err);}
-
-    res.status(403).send('Go away!!');
+    if (err instanceof permissions.error) {
+      res.status(403).send('Go away!!');
+    }
   });
 
   return app;

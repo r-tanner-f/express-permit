@@ -1,77 +1,90 @@
 'use strict';
-
 var Express = require('express');
+var session = require('express-session');
 
-var amusementRouter     = Express.Router();
-var moarAmusementRouter = Express.Router();
+var app = Express();
 
-var boringRouter        = Express.Router();
-var moarBoringRouter    = Express.Router();
+var amusementRouter = require('./complex/amusementRouter');
+var moarAmusementRouter = require('./complex/moarAmusementRouter');
+var boringRouter = require('./complex/boringRouter');
+var moarBoringRouter = require('./complex/moarBoringRouter');
 
-var baseRouter          = Express.Router();
+var permissions = require('../../src/index.js');
+var check = require('../../src/index.js').check;
 
-var root = require('../../src/index.js').tag;
+var tree = require('../../src/index.js').tree;
 
-var amusement = require('../../src/index.js').tag.group('amusement', amusementRouter);
-var boring = require('../../src/index.js').tag.group('boring', boringRouter);
+var users = {
+  //jscs: disable disallowSpaceAfterObjectKeys
+  awesomeUser: {
+    root: {'enter-park': true, },
+    amusement: {
+      'go-on-rides': true,
+      'eat-popcorn': true,
+      'play-games' : true,
+    },
+  },
+  terribleUser: {
+    root:{ 'enter-park': true, },
+    boring: {
+      'be-bored' : true,
+    },
+    moarBoring: {
+      'be-boring': true,
+    },
+  },
 
-var moarAmusement = require('../../src/index.js').tag.group('amusement', moarAmusementRouter);
-var moarBoring = require('../../src/index.js').tag.group('moarBoring', moarBoringRouter);
+  proprietor: 'admin',
 
-baseRouter.use(root('enter-park'));
+  employee: {
+    root:{ 'enter-park': true, },
+    amusement: 'admin',
+    boring   : 'admin',
+  },
 
-baseRouter.get('/ticket-booth', function(req, res) {
-  if (req.permits && req.permits.boring) {
-    return res.send('you may enter, but you are only allowed to be bored!');
-  }
+  bankruptUser: {
+    root:{ 'enter-park': false, },
+    boring: 'admin',
+  },
 
+  //jscs: enable
+};
+
+app.use(session({
+  secret: 'keyboard cat',
+  resave: 'false',
+  saveUninitialized: true,
+}));
+
+app.use(permissions({
+  store: new permissions.InMemoryPermits(users),
+  username: 'req.session.username',
+}));
+
+app.get('/login/:user', function(req, res) {
+  req.session.username = req.params.user;
+  res.send('Logged in as ' + req.params.user);
+});
+
+app.get('/ticket-booth', check('enter-park'), function(req, res) {
   res.send('you may enter!!');
 });
 
-amusementRouter.get('/rides', amusement('go-on-rides'), function(req, res) {
-  res.send('whee!');
-});
-
-amusementRouter.get('/popcorn', amusement('eat-popcorn'), function(req, res) {
-  res.send('omnomnomnomnom');
-});
-
-boringRouter.get('/twiddle', boring('be-bored'), function(req, res) {
-  res.send('twiddling thumbs is actually entertaining after a few hours...');
-});
-
-boringRouter.get('/shuffle-dirt', boring('be-bored'), function(req, res) {
-  res.send('*cough* cough*');
-});
-
-moarAmusementRouter.get('/games', moarAmusement('play-games'),
-  function(req, res) {
-    res.send('I think these might be rigged...');
-  }
-);
-
-moarBoringRouter.get('/look-bored', moarBoring('be-boring'),
-  function(req, res) {
-    res.send('I\'m boooooored.');
-  }
-);
-
-baseRouter.use(
+app.use('/park', check('enter-park'),
   amusementRouter, moarAmusementRouter, boringRouter, moarBoringRouter
 );
 
-var app = require('./common')(baseRouter, {
-      awesomeUser: {
-        amusement: {
-          haveFun: true,
-        },
-      },
-      terribleUser: {
-        amusement: {
-          haveFun: false,
-        },
-      },
-    });
+app.get('/tree', tree, function(req, res) {
+  res.json(res.locals.permissionSet);
+});
+
+// Error handler
+app.use(function(err, req, res, next) { //jshint ignore:line
+  if (err instanceof permissions.error) {
+    debugger;
+    res.status(403).send('Go away!!');
+  }
+});
 
 module.exports = app;
 

@@ -6,8 +6,53 @@ function expressPermit(options) {
   var store = options.store;
 
   return function(req, res, next) {
-    req.permits = store.get(eval(options.username)); //jshint ignore:line
+    var user = store.get(eval(options.username)); //jshint ignore:line
+    if (!user) {
+      req.permits = {};
+    } else {
+      req.permits = user;
+    }
+
     next();
+  };
+}
+
+class PermissionsError {
+  constructor(req, action, group) {
+    this.message = `Permissions Error: Required ${group} ${action}`;
+    this.name = this.constructor.name;
+    this.baseUrl = req.baseUrl;
+    this.route   = req.route;
+    this.action  = action;
+    this.group   = group;
+    this.permits = req.permits;
+  }
+}
+
+// TODO clean up this garbage
+function check(action, group) {
+  if (!group) {group = 'root';}
+
+  return function permitCheck(req, res, next) {
+    // If for some reason there is no req.permits,
+    // this will prevent goofy errors from happening.
+    if (req.permits) {
+      if (group === 'root' && req.permits[action] === true) {
+        return next();
+      }
+
+      if (
+        req.permits[group]                     &&
+        req.permits[group][action] === true    ||
+        req.permits                === 'admin' ||
+        req.permits[group]         === 'admin'
+      ) {
+        return next();
+      }
+    }
+
+    var err = new PermissionsError(req, action, group);
+    next(err);
   };
 }
 
@@ -76,26 +121,6 @@ class Tagger { //jshint ignore:line
   }
 }
 
-expressPermit.tagger = Tagger;
-
-function check(action, group) {
-  if (!group) {group = 'root';}
-
-  return function permitCheck(req, res, next) {
-      if (
-        !req.permits ||
-        !req.permits[group] ||
-        !req.permits[group][action]
-      ) {
-        next('Permissions Error');
-      }
-
-      next();
-    };
-}
-
-expressPermit.check = check;
-
 function initTag() {
   // If params were sent backwards, be kind and rewind
   if (typeof arguments[0] === 'string' && typeof arguments[1] === 'function') {
@@ -109,30 +134,34 @@ function initTag() {
 
 expressPermit.tag = initTag;
 
+function scrapePermissions(node, map) {
+  // Check if the node we're looking at is a permissions object
+  if (!node || !node.permissions) {return;}
+
+  //Iterate over the permissions Map
+  node.permissions.forEach(function(actions, group) {
+
+    // If the map doesn't currently have that group, add it
+    if (!map.has(group)) {
+      map.set(group, actions);
+    } else {
+      // If it does have the group, combine the sets
+      var set = map.get(group);
+      set = new Set([...set, actions]);
+    }
+  });
+}
+
 function permitMap(req, res, next) {
   var map = new Map();
 
+  scrapePermissions(req.app, map);
+
   traverse(req.app._router.stack).forEach(function(node) {
-
-    // Check if the node we're looking at is a permissions object
-    if (node && node.permissions) {
-
-      //Iterate over the permissions Map
-      node.permissions.forEach(function(actions, group) {
-
-        // If the map doesn't currently have that group, add it
-        if (!map.has(group)) {
-          map.set(group, actions);
-        } else {
-          // If it does have the group, combine the sets
-          var set = map.get(group);
-          set = new Set([...set, actions]);
-        }
-      });
-    }
+    scrapePermissions(node, map);
   });
 
-  var permissionSet = {root: []};
+  var permissionSet = {};
 
   map.forEach(function(set, key) {
 
@@ -154,9 +183,7 @@ function permitMap(req, res, next) {
   next();
 }
 
-expressPermit.tree = permitMap;
-
-expressPermit.InMemoryPermits = function MemoryPermits(permissions) {
+function MemoryPermits(permissions) {
   this.permissions = permissions;
 
   this.get = id => this.permissions[id];
@@ -164,6 +191,12 @@ expressPermit.InMemoryPermits = function MemoryPermits(permissions) {
   this.set = function set(id, permissions) {
     this.permissions[id] = permissions;
   };
-};
+}
+
+expressPermit.InMemoryPermits = MemoryPermits;
+expressPermit.tree = permitMap;
+expressPermit.tagger = Tagger;
+expressPermit.check = check;
+expressPermit.error = PermissionsError;
 
 module.exports = expressPermit;

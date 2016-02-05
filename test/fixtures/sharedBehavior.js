@@ -6,7 +6,11 @@ module.exports = function(app) {
 
     agent
     .get('/')
-    .expect(403, 'Go away!', done);
+    .expect(403, 'Go away!!')
+    .end(function(err) {
+      if (err) throw err;
+      done();
+    });
   });
 
   it('should allow access to awesome-user', function(done) {
