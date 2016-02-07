@@ -5,19 +5,23 @@ var router = Express.Router();
 
 var permit = require('../../src/index.js').check;
 
-router.get('/', permit('haveFun'), function(req, res) {
+router.get('/', permit('haveFun'), function (req, res) {
   res.send('yaaay');
 });
 
 var app = require('./common')(router, {
       awesomeUser: {
-        root: {
-          haveFun: true,
+        permissions: {
+          root: {
+            haveFun: true,
+          },
         },
       },
       terribleUser: {
-        root: {
-          haveFun: false,
+        permissions: {
+          root: {
+            haveFun: false,
+          },
         },
       },
     });

@@ -17,38 +17,59 @@ var tree = require('../../src/index.js').tree;
 var users = {
   //jscs: disable disallowSpaceAfterObjectKeys
   awesomeUser: {
-    root: {'enter-park': true, },
-    amusement: {
-      'go-on-rides': true,
-      'eat-popcorn': true,
-      'play-games' : true,
+    permissions: {
+      root: { 'enter-park': true, },
+      amusement: { 'play-games': true, },
     },
+    groups: [
+      'park-attendee',
+    ],
   },
   terribleUser: {
-    root:{ 'enter-park': true, },
-    boring: {
-      'be-bored' : true,
-    },
-    moarBoring: {
-      'be-boring': true,
+    permissions: {
+      root:{ 'enter-park': true, },
+      boring: {
+        'be-bored': true,
+      },
+      moarBoring: {
+        'be-boring': true,
+      },
     },
   },
 
-  proprietor: 'admin',
+  proprietor: {
+    permissions: 'admin',
+  },
 
   employee: {
-    root:{ 'enter-park': true, },
-    amusement: 'admin',
-    boring   : 'admin',
+    permissions: {
+      root:{ 'enter-park': true, },
+    },
+    groups: ['employees'],
   },
 
   bankruptUser: {
-    root:{ 'enter-park': false, },
+    permissions: {
+      root:{ 'enter-park': false, },
+      boring: 'admin',
+    },
+  },
+};
+
+var groups = {
+  employees: {
+    amusement: 'admin',
     boring: 'admin',
   },
-
-  //jscs: enable
+  'park-attendee': {
+    amusement: {
+      'go-on-rides': true,
+      'eat-popcorn': true,
+    },
+  },
 };
+
+//jscs: enable
 
 app.use(session({
   secret: 'keyboard cat',
@@ -57,16 +78,16 @@ app.use(session({
 }));
 
 app.use(permissions({
-  store: new permissions.InMemoryPermits(users),
+  store: new permissions.InMemoryPermits(users, groups),
   username: 'req.session.username',
 }));
 
-app.get('/login/:user', function(req, res) {
+app.get('/login/:user', function (req, res) {
   req.session.username = req.params.user;
   res.send('Logged in as ' + req.params.user);
 });
 
-app.get('/ticket-booth', check('enter-park'), function(req, res) {
+app.get('/ticket-booth', check('enter-park'), function (req, res) {
   res.send('you may enter!!');
 });
 
@@ -74,16 +95,17 @@ app.use('/park', check('enter-park'),
   amusementRouter, moarAmusementRouter, boringRouter, moarBoringRouter
 );
 
-app.get('/tree', tree, function(req, res) {
+app.get('/tree', tree, function (req, res) {
   res.json(res.locals.permissionSet);
 });
 
 // Error handler
-app.use(function(err, req, res, next) { //jshint ignore:line
+app.use(function (err, req, res, next) { //jshint ignore:line
   if (err instanceof permissions.error) {
-    debugger;
-    res.status(403).send('Go away!!');
+    return res.status(403).send('Go away!!');
   }
+
+  next(err);
 });
 
 module.exports = app;

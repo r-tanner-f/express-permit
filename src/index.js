@@ -1,57 +1,106 @@
 'use strict';
 
+var clone    = require('lodash.clonedeep');
 var traverse = require('traverse');
 
 function expressPermit(options) {
   var store = options.store;
 
-  return function(req, res, next) {
-    var user = store.get(eval(options.username)); //jshint ignore:line
-    if (!user) {
-      req.permits = {};
-    } else {
-      req.permits = user;
-    }
+  return function (req, res, next) {
+    store.getUser(eval(options.username), function (err, user) { //jshint ignore:line
+      if (err) {next(err);}
 
-    next();
+      if (!user) {
+        req.permits = {};
+      } else {
+        req.permits = compilePermissions(user);
+      }
+
+      next();
+    });
   };
 }
 
+function compilePermissions(user) {
+  let permissions = clone(user.permissions);
+  if (!user.groups) {return permissions;}
+
+  debugger;
+
+  // This smells funny...
+  for (var i = 0; i < user.groups.length; i++) {
+    let group = user.groups[i];
+
+    // If the user part of the admin group, skip everything and give them admin
+    if (group === 'admin') {
+      permissions = 'admin';
+      break;
+    }
+
+    for (let suite in group) {
+      if (permissions[suite] === 'admin') {continue;}
+
+      if (group[suite] === 'admin') {
+        permissions[suite] = 'admin';
+        continue;
+      }
+
+      if (!permissions[suite]) {permissions[suite] = {};}
+
+      for (let action in group[suite]) {
+
+        if (action === 'admin') {
+
+          // If user is admin of suite, give admin and continue to next suite
+          permissions[suite] = 'admin';
+          continue;
+        }
+
+        if (permissions[suite][action] !== false) {
+          permissions[suite][action] = group[suite][action];
+        }
+      }
+    }
+  }
+
+  return permissions;
+}
+
 class PermissionsError {
-  constructor(req, action, group) {
-    this.message = `Permissions Error: Required ${group} ${action}`;
+  constructor(req, action, suite) {
+    this.message = `Permissions Error: Required ${suite} ${action}`;
     this.name = this.constructor.name;
     this.baseUrl = req.baseUrl;
     this.route   = req.route;
     this.action  = action;
-    this.group   = group;
+    this.suite = suite;
     this.permits = req.permits;
   }
 }
 
 // TODO clean up this garbage
-function check(action, group) {
-  if (!group) {group = 'root';}
+function check(action, suite) {
+  if (!suite) {suite = 'root';}
 
   return function permitCheck(req, res, next) {
     // If for some reason there is no req.permits,
     // this will prevent goofy errors from happening.
     if (req.permits) {
-      if (group === 'root' && req.permits[action] === true) {
+      if (suite === 'root' && req.permits[action] === true) {
         return next();
       }
 
       if (
-        req.permits[group]                     &&
-        req.permits[group][action] === true    ||
+        req.permits[suite]                     &&
+        req.permits[suite][action] === true    ||
         req.permits                === 'admin' ||
-        req.permits[group]         === 'admin'
+        req.permits[suite]         === 'admin'
       ) {
         return next();
       }
     }
 
-    var err = new PermissionsError(req, action, group);
+    var err = new PermissionsError(req, action, suite);
     next(err);
   };
 }
@@ -60,44 +109,44 @@ class Tagger { //jshint ignore:line
   constructor() {
 
     // Three possible inputs
-    // A group:
+    // A suite:
     if (typeof arguments[0] === 'string') {
-      this.defaultGroup = arguments[0];
+      this.defaultSuite = arguments[0];
     }
 
     // A router:
     else if (typeof arguments[0] === 'function' && !arguments[1]) {
-      this.defaultGroup = 'root';
+      this.defaultSuite = 'root';
       this.router = arguments[0];
     }
 
-    // A router and a group:
+    // A router and a suite:
     else if (
       typeof arguments[0] === 'function' &&
       typeof arguments[1] === 'string'
     ) {
       this.router = arguments[0];
-      this.defaultGroup  = arguments[1];
+      this.defaultSuite = arguments[1];
     } else {
       throw new Error('Tag called with invalid parameters.\n' +
                        'Got ' + arguments[0] + ', ' + arguments[1] + '.\n' +
-                       'Need a router, group, or router + group.');
+                       'Need a router, suite, or router + suite.');
     }
   }
 
-  tag(action, group) {
-    group = group ? group : this.defaultGroup;
+  tag(action, suite) {
+    suite = suite ? suite : this.defaultSuite;
 
     // If this a tracked tag
     if (this.router) {
-      this._trackTag(action, group);
+      this._trackTag(action, suite);
     }
 
-    return check(action, group);
+    return check(action, suite);
   }
 
-  _trackTag(action, group) {
-    group = group ? group : this.defaultGroup;
+  _trackTag(action, suite) {
+    suite = suite ? suite : this.defaultSuite;
     let router = this.router;
 
     // If the router doesn't already have permissions on it, create a new map
@@ -107,16 +156,16 @@ class Tagger { //jshint ignore:line
 
     let permissions = router.permissions;
 
-    //Does the router's permissions have the group?
-    if (!permissions.has(group)) {
+    //Does the router's permissions have the suite?
+    if (!permissions.has(suite)) {
 
       // Add a new set if not
-      permissions.set(group, new Set([action]));
+      permissions.set(suite, new Set([action]));
     }
 
-    // Get the group and add the permission to the Set
+    // Get the suite and add the permission to the Set
     else {
-      permissions.get(group).add(action);
+      permissions.get(suite).add(action);
     }
   }
 }
@@ -139,14 +188,14 @@ function scrapePermissions(node, map) {
   if (!node || !node.permissions) {return;}
 
   //Iterate over the permissions Map
-  node.permissions.forEach(function(actions, group) {
+  node.permissions.forEach(function (actions, suite) {
 
-    // If the map doesn't currently have that group, add it
-    if (!map.has(group)) {
-      map.set(group, actions);
+    // If the map doesn't currently have that suite, add it
+    if (!map.has(suite)) {
+      map.set(suite, actions);
     } else {
-      // If it does have the group, combine the sets
-      var set = map.get(group);
+      // If it does have the suite, combine the sets
+      var set = map.get(suite);
       set = new Set([...set, actions]);
     }
   });
@@ -157,13 +206,13 @@ function permitMap(req, res, next) {
 
   scrapePermissions(req.app, map);
 
-  traverse(req.app._router.stack).forEach(function(node) {
+  traverse(req.app._router.stack).forEach(function (node) {
     scrapePermissions(node, map);
   });
 
   var permissionSet = {};
 
-  map.forEach(function(set, key) {
+  map.forEach(function (set, key) {
 
     // Combine _root and root.
     // Separated to differentiate between implicit and explicit root.
@@ -183,17 +232,7 @@ function permitMap(req, res, next) {
   next();
 }
 
-function MemoryPermits(permissions) {
-  this.permissions = permissions;
-
-  this.get = id => this.permissions[id];
-
-  this.set = function set(id, permissions) {
-    this.permissions[id] = permissions;
-  };
-}
-
-expressPermit.InMemoryPermits = MemoryPermits;
+expressPermit.InMemoryPermits = require('./memoryPermits');
 expressPermit.tree = permitMap;
 expressPermit.tagger = Tagger;
 expressPermit.check = check;

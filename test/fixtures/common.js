@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function(router, users) {
+module.exports = function (router, users) {
   var permissions = require('../../src/index.js');
   var InMemoryPermits = require('../../src/index.js').InMemoryPermits;
 
@@ -22,12 +22,12 @@ module.exports = function(router, users) {
     username: 'req.session.username',
   }));
 
-  app.get('/login/awesome-user', function(req, res) {
+  app.get('/login/awesome-user', function (req, res) {
     req.session.username = 'awesomeUser';
     res.send('Logged in as awesomeUser');
   });
 
-  app.get('/login/terrible-user', function(req, res) {
+  app.get('/login/terrible-user', function (req, res) {
     req.session.username = 'terribleUser';
     res.send('Logged in as terribleUser');
   });
@@ -35,10 +35,12 @@ module.exports = function(router, users) {
   app.use(router);
 
   // Error handler
-  app.use(function(err, req, res, next) { //jshint ignore:line
+  app.use(function (err, req, res, next) { //jshint ignore:line
     if (err instanceof permissions.error) {
-      res.status(403).send('Go away!!');
+      return res.status(403).send('Go away!!');
     }
+
+    next(err);
   });
 
   return app;

@@ -6,23 +6,27 @@ var router = Express.Router();
 var permit = require('../../src/index.js').tag(router, 'amusement');
 var tree = require('../../src/index.js').tree;
 
-router.get('/', permit('haveFun'), function(req, res) {
+router.get('/', permit('haveFun'), function (req, res) {
   res.send('yaaay');
 });
 
-router.get('/tree', tree, function(req, res) {
+router.get('/tree', tree, function (req, res) {
   res.json(res.locals.permissionSet);
 });
 
 var app = require('./common')(router, {
       awesomeUser: {
-        amusement: {
-          haveFun: true,
+        permissions: {
+          amusement: {
+            haveFun: true,
+          },
         },
       },
       terribleUser: {
-        amusement: {
-          haveFun: false,
+        permissions: {
+          amusement: {
+            haveFun: false,
+          },
         },
       },
     });
