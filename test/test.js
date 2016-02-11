@@ -1,7 +1,13 @@
 'use strict';
 
+var util           = require('util');
+
 var supertest      = require('supertest');
-var expect         = require('chai').expect;
+var rewire         = require('rewire');
+var chai           = require('chai');
+var dirtyChai      = require('dirty-chai');
+var expect         = chai.expect;
+chai.use(dirtyChai);
 
 var async          = require('async');
 
@@ -11,6 +17,8 @@ var trackedSimple  = require('./fixtures/trackedSimple');
 var trackedSuite   = require('./fixtures/trackedSuite');
 
 var amusementPark  = require('./fixtures/complex');
+
+var configure      = rewire('./fixtures/configure');
 
 var sharedBehavior = require('./fixtures/sharedBehavior.js');
 
@@ -203,6 +211,59 @@ describe('Complex use', function () {
     }, done);
   });
 
+});
+
+describe('Configuration', function () {
+  var users = configure.__get__('users');
+  var awesomeUser = users.awesomeUser;
+  var agent = supertest.agent(configure);
+
+  it('should create a user', function (done) {
+    var user = {
+      username: 'someGuy',
+      permit: {
+        root: { 'enter-park': true },
+      },
+    };
+
+    agent
+    .post('/createUser')
+    .send(user)
+    .expect(200)
+    .end(function (err) {
+      if (err) throw err;
+      expect(users.someGuy).to.deep.equal({
+        root: { 'enter-park': true },
+      });
+      done();
+    });
+  });
+
+  it('should add a root permission to a user', function (done) {
+    agent
+    .get('/addPermission/awesomeUser/doStuff')
+    .expect(200)
+    .end(function (err) {
+      if (err) throw err;
+      expect(awesomeUser.permissions.root.doStuff).to.be.true();
+      done();
+    });
+  });
+
+  it('should add a suite permission to a user', function (done) {
+    agent
+    .get('/addPermission/awesomeUser/amusement/ferris-wheel')
+    .expect(200)
+    .end(function (err) {
+      if (err) throw err;
+      expect(awesomeUser.permissions.amusement['ferris-wheel']).to.be.true();
+      done();
+    });
+  });
+
+  after(function () {
+    console.log(util.inspect(users, { depth: null }));
+  });
 });
 
 function test(user, tests, callback) {

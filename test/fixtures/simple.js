@@ -4,7 +4,6 @@ var Express = require('express');
 var router = Express.Router();
 
 var permit = require('../../src/index.js').check;
-
 router.get('/', permit('haveFun'), function (req, res) {
   res.send('yaaay');
 });
