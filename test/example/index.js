@@ -4,15 +4,14 @@ var session = require('express-session');
 
 var app = Express();
 
-var amusementRouter = require('./complex/amusementRouter');
-var moarAmusementRouter = require('./complex/moarAmusementRouter');
-var boringRouter = require('./complex/boringRouter');
-var moarBoringRouter = require('./complex/moarBoringRouter');
+var amusementRouter = require('./amusementRouter');
+var moarAmusementRouter = require('./moarAmusementRouter');
+var boringRouter = require('./boringRouter');
+var moarBoringRouter = require('./moarBoringRouter');
 
 var permissions = require('../../src/index.js');
-var check = require('../../src/index.js').check;
-
-var tree = require('../../src/index.js').tree;
+var check = permissions.check;
+var tree = permissions.tree;
 
 var users = {
   //jscs: disable disallowSpaceAfterObjectKeys

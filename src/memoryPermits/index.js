@@ -25,7 +25,7 @@ class MemoryPermits {
 // CRUD ------------------------------------------------------------------------
   create(username, permit, callback) {
     if (this.users[username]) {
-      return callback(new Error('User already exists'));
+      return callback(new this.NotFoundError('User already exists'));
     }
 
     this.users[username] = permit;
@@ -43,7 +43,7 @@ class MemoryPermits {
 
   update(username, permit, callback) {
     if (!this.users[username]) {
-      return callback(new Error('User does not exist'));
+      return callback(new this.NotFoundError('User does not exist'));
     }
 
     this.users[username] = permit;
@@ -52,7 +52,7 @@ class MemoryPermits {
 
   destroy(username, callback) {
     if (!this.users[username]) {
-      return callback(new Error('User does not exist'));
+      return callback(new this.NotFoundError('User does not exist'));
     }
 
     delete this.users[username];
@@ -69,7 +69,7 @@ class MemoryPermits {
     }
 
     if (!this.users[username]) {
-      return callback(new Error('User does not exist'));
+      return callback(new this.NotFoundError('User does not exist'));
     }
 
     if (!this.users[username].permissions[suite]) {
@@ -81,21 +81,22 @@ class MemoryPermits {
   }
 
   removePermission(username, permission, suite, callback) {
-
     // TODO move this to wrapper
     if (!suite) {
       suite = 'root';
     }
 
     if (!this.users[username]) {
-      return callback(new Error('User does not exist'));
+      return callback(new this.NotFoundError('User does not exist'));
     }
 
     if (
       !this.users[username].permissions[suite] ||
       !this.users[username].permissions[suite][permission]
     ) {
-      return callback(new Error('Suite or permission does not exist'));
+      return callback(new this.NotFoundError(
+        'Suite or permission does not exist'
+      ));
     }
 
     delete this.users[username].permissions[suite][permission];
@@ -104,7 +105,7 @@ class MemoryPermits {
 
   updatePermissions(username, permissions, callback) {
     if (!this.users[username]) {
-      return callback(new Error('User does not exist'));
+      return callback(new this.NotFoundError('User does not exist'));
     }
 
     this.users[username].permissions = permissions;
@@ -117,7 +118,7 @@ class MemoryPermits {
     }
 
     if (!this.users[username]) {
-      return callback(new Error('User does not exist'));
+      return callback(new this.NotFoundError('User does not exist'));
     }
 
     if (!this.users[username].permissions[suite]) {
@@ -132,23 +133,28 @@ class MemoryPermits {
 
   addGroup(username, group, callback) {
     if (!this.users[username]) {
-      return callback(new Error('User does not exist'));
+      return callback(new this.NotFoundError('User does not exist'));
     }
 
     if (this.users[username].groups.indexOf(group) !== -1) {
-      return callback(new Error('User is already in group'));
+      return callback(new this.NotFoundError('User is already in group'));
+    }
+
+    if (!this.groups[group]) {
+      return callback(new this.NotFoundError('Group does not exist'));
     }
 
     this.users[username].groups.push(group);
+    callback();
   }
 
   removeGroup(username, group, callback) {
     if (!this.users[username]) {
-      return callback(new Error('User does not exist'));
+      return callback(new this.NotFoundError('User does not exist'));
     }
 
     if (this.users[username].groups.indexOf(group) === -1) {
-      return callback(new Error('User is not a member of group'));
+      return callback(new this.NotFoundError('User is not a member of group'));
     }
 
     this.users[username].groups = this.users[username].groups.filter(
@@ -162,9 +168,9 @@ class MemoryPermits {
 // Groups ======================================================================
 
 // CRUD ------------------------------------------------------------------------
-  createGroup(username, group, permissions, callback) {
+  createGroup(group, permissions, callback) {
     if (this.groups[group]) {
-      return callback(new Error('Group already exists'));
+      return callback(new this.NotFoundError('Group already exists'));
     }
 
     this.groups[group] = permissions;
@@ -173,7 +179,7 @@ class MemoryPermits {
 
   readGroup(group, callback) {
     if (!this.groups[group]) {
-      return callback(new Error('Group does not exist'));
+      return callback(new this.NotFoundError('Group does not exist'));
     }
 
     callback(null, this.groups[group]);
@@ -181,7 +187,7 @@ class MemoryPermits {
 
   updateGroup(group, permissions, callback) {
     if (!this.groups[group]) {
-      return callback(new Error('Group does not exist'));
+      return callback(new this.NotFoundError('Group does not exist'));
     }
 
     this.groups[group] = permissions;
@@ -190,7 +196,7 @@ class MemoryPermits {
 
   destroyGroup(group, callback) {
     if (!this.groups[group]) {
-      return callback(new Error('Group does not exist'));
+      return callback(new this.NotFoundError('Group does not exist'));
     }
 
     delete this.groups[group];
@@ -200,8 +206,9 @@ class MemoryPermits {
 // Permission Operations -------------------------------------------------------
 
   addGroupPermission(group, permission, suite, callback) {
+    debugger;
     if (!this.groups[group]) {
-      return callback(new Error('Group does not exist'));
+      return callback(new this.NotFoundError('Group does not exist'));
     }
 
     // TODO move this to wrapper
@@ -219,7 +226,7 @@ class MemoryPermits {
 
   removeGroupPermission(group, permission, suite, callback) {
     if (!this.groups[group]) {
-      return callback(new Error('Group does not exist'));
+      return callback(new this.NotFoundError('Group does not exist'));
     }
 
     // TODO move this to wrapper
@@ -228,11 +235,11 @@ class MemoryPermits {
     }
 
     if (!this.groups[group][suite]) {
-      return callback(new Error('Suite does not exist'));
+      return callback(new this.NotFoundError('Suite does not exist'));
     }
 
     if (!this.groups[group][suite][permission]) {
-      return callback(new Error('Permission does not exist'));
+      return callback(new this.NotFoundError('Permission does not exist'));
     }
 
     delete this.groups[group][suite][permission];
@@ -241,7 +248,7 @@ class MemoryPermits {
 
   blockGroupPermission(group, permission, suite, callback) {
     if (!this.groups[group]) {
-      return callback(new Error('Group does not exist'));
+      return callback(new this.NotFoundError('Group does not exist'));
     }
 
     // TODO move this to wrapper
@@ -257,4 +264,5 @@ class MemoryPermits {
     callback();
   }
 }
+
 module.exports = MemoryPermits;

@@ -1,57 +1,13 @@
 'use strict';
 
-var util           = require('util');
+var supertest     = require('supertest');
+var async         = require('async');
 
-var supertest      = require('supertest');
-var rewire         = require('rewire');
-var chai           = require('chai');
-var dirtyChai      = require('dirty-chai');
-var expect         = chai.expect;
-chai.use(dirtyChai);
+var testTree      = require('./helper').testTree;
+var login         = require('./helper').login;
+var amusementPark = require('./example');
 
-var async          = require('async');
-
-var simple         = require('./fixtures/simple');
-var suite          = require('./fixtures/suite');
-var trackedSimple  = require('./fixtures/trackedSimple');
-var trackedSuite   = require('./fixtures/trackedSuite');
-
-var amusementPark  = require('./fixtures/complex');
-
-var configure      = rewire('./fixtures/configure');
-
-var sharedBehavior = require('./fixtures/sharedBehavior.js');
-
-describe('Troubleshooting Tests: ', function () {
-  describe('Simple use', function () {
-    sharedBehavior(simple);
-  });
-
-  describe('Suite use', function () {
-    sharedBehavior(suite);
-  });
-
-  describe('Tracked simple use', function () {
-    sharedBehavior(trackedSimple);
-    it('should create a permissions tree', function (done) {
-      var agent = supertest.agent(trackedSimple);
-
-      var expectedSimpleMap = { root: ['haveFun'] };
-      testTree(agent, expectedSimpleMap, done);
-    });
-  });
-
-  describe('Tracked suite use', function () {
-    sharedBehavior(trackedSuite);
-    it('should create a permissions tree', function (done) {
-      var agent = supertest.agent(trackedSuite);
-      var expectedSimpleMap = { amusement: ['haveFun'] };
-      testTree(agent, expectedSimpleMap, done);
-    });
-  });
-});
-
-describe('Complex use', function () {
+describe('Example usage', function () {
   it('shouldn\'t break 404s', function (done) {
 
     test('awesomeUser', [
@@ -213,59 +169,6 @@ describe('Complex use', function () {
 
 });
 
-describe('Configuration', function () {
-  var users = configure.__get__('users');
-  var awesomeUser = users.awesomeUser;
-  var agent = supertest.agent(configure);
-
-  it('should create a user', function (done) {
-    var user = {
-      username: 'someGuy',
-      permit: {
-        root: { 'enter-park': true },
-      },
-    };
-
-    agent
-    .post('/createUser')
-    .send(user)
-    .expect(200)
-    .end(function (err) {
-      if (err) throw err;
-      expect(users.someGuy).to.deep.equal({
-        root: { 'enter-park': true },
-      });
-      done();
-    });
-  });
-
-  it('should add a root permission to a user', function (done) {
-    agent
-    .get('/addPermission/awesomeUser/doStuff')
-    .expect(200)
-    .end(function (err) {
-      if (err) throw err;
-      expect(awesomeUser.permissions.root.doStuff).to.be.true();
-      done();
-    });
-  });
-
-  it('should add a suite permission to a user', function (done) {
-    agent
-    .get('/addPermission/awesomeUser/amusement/ferris-wheel')
-    .expect(200)
-    .end(function (err) {
-      if (err) throw err;
-      expect(awesomeUser.permissions.amusement['ferris-wheel']).to.be.true();
-      done();
-    });
-  });
-
-  after(function () {
-    console.log(util.inspect(users, { depth: null }));
-  });
-});
-
 function test(user, tests, callback) {
   var agent = supertest.agent(amusementPark);
 
@@ -281,28 +184,5 @@ function test(user, tests, callback) {
     });
 
     async.series(asyncTests, callback);
-  });
-}
-
-function testTree(agent, expectedTree, done) {
-  login('awesome-user', agent, function () {
-    agent
-    .get('/tree')
-    .expect(200)
-    .end(function (err, res) {
-      if (err) throw err;
-      expect(res.body).to.deep.equal(expectedTree);
-      done();
-    });
-  });
-}
-
-function login(user, agent, callback) {
-  agent
-  .get('/login/' + user)
-  .expect(200)
-  .end(function (err) {
-    if (err) throw err;
-    callback();
   });
 }

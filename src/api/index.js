@@ -3,150 +3,110 @@
 var validation = require('./validation');
 var ValidationError = validation.ValidationError;
 
+exports.validation = validation.middleware;
+exports.ValidationError = ValidationError;
+
+function op() {
+  var op     = arguments[0];
+  var params = Array.prototype.slice.call(arguments, 1);
+
+  return function (req, res, next) {
+    var err = [];
+
+    var args = params.map(function (param) {
+      var required = true;
+
+      // If the param is annotated with a ? at the end, the param is optional
+      if (param[param.length - 1] === '?') {
+        param = param.slice(0, -1);
+        required = false;
+      }
+
+      let parse = req.params[param] || req.query[param];
+      if (req.body && req.body[param]) {
+        parse = req.body[param];
+      }
+
+      if (!parse && required) {
+        err.push(new ValidationError(`Missing required parameter: ${param}`));
+      }
+
+      // Dump the param to res.locals
+      // So it can be rendered on confirmation pages and the like
+      res.locals.permitAPI[param] = parse;
+      return parse;
+    });
+
+    if (err.length > 0) {
+      return next(new ValidationError(err));
+    }
+
+    req.permitStore[op](...args, function (err, result) {
+      res.locals.permitAPI.result = result;
+
+      if (err) {
+        var error = new Error('An occured error in express-permit\'s store.\n' +
+                              'See Error.Additional for more details');
+        error.additional = err;
+        next(err);
+      }
+
+      next();
+    });
+  };
+}
+
 // Users =======================================================================
 
-exports.create = function create(req, res, next) {
-  parse(req, next, 'username', 'permit', function (args) {
-    req.permitStore.create(...args, errOr(next));
-  });
-};
+exports.create = op('create', 'username', 'permit');
 
-exports.read = function get(req, res, next) {
-  var args = parse(req, 'username');
-  req.permitStore.read(...args, errOr(next));
-};
+exports.read = op('read', 'username');
 
-exports.update = function update(req, res, next) {
-  req.permitStore.update(...parse(req, 'username', 'permit'), errOr(next));
-};
+exports.update = op('update', 'username', 'permit');
 
-exports.destroy = function destroy(req, res, next) {
-  req.permitStore.destroy(...parse(req, 'username'), errOr(next));
-};
+exports.destroy = op('destroy', 'username');
 
 // Permission Operations -------------------------------------------------------
 
-exports.addPermission = function addPermission(req, res, next) {
-  var args = parse(req, 'username', 'permission', 'suite?');
-  if (args instanceof ValidationError) {
-    return next(args);
-  }
+exports.addPermission = op('addPermission', 'username', 'permission', 'suite?');
 
-  req.permitStore.addPermission(...args, errOr(next));
-};
+exports.removePermission = op(
+  'removePermission', 'username', 'permission', 'suite?'
+);
 
-exports.removePermission = function removePermission(req, res, next) {
-  var args = parse(req, 'username', 'permission', 'suite?');
-  if (args instanceof ValidationError) {
-    return next(args);
-  }
-
-  req.permitStore.removePermission(...args, errOr(next));
-};
-
-exports.blockPermission = function blockPermission(req, res, next) {
-  req.permitStore.blockPermission(
-    ...parse(req, 'username', 'permission', 'suite?'), errOr(next)
-  );
-};
+exports.blockPermission = op(
+  'blockPermission', 'username', 'permission', 'suite?'
+);
 
 // Group Operations ------------------------------------------------------------
 
-exports.addGroup = function addGroup(req, res, next) {
-  req.permitStore.addGroup(...parse(req, 'username', 'group'), errOr(next));
-};
+exports.addGroup = op('addGroup', 'username', 'group');
 
-exports.removeGroup = function removeGroup(req, res, next) {
-  req.permitStore.removeGroup(...parse(req, 'username', 'group'), errOr(next));
-};
+exports.removeGroup = op('removeGroup', 'username', 'group');
 
 // Groups ======================================================================
 
 // CRUD ------------------------------------------------------------------------
 
-exports.createGroup = function createGroup(req, res, next) {
-  req.permitStore.createGroup(
-    ...parse(req, 'group', 'permissions'), errOr(next)
-  );
-};
+exports.createGroup = op('createGroup', 'group', 'permissions');
 
-exports.readGroup = function readGroup(req, res, next) {
-  req.permitStore.readGroup(...parse(req, 'group'), errOr(next));
-};
+exports.readGroup = op('readGroup', 'group');
 
-exports.updateGroup = function updateGroup(req, res, next) {
-  req.permitStore.updateGroup(
-    ...parse(req, 'group', 'permissions'),
-    errOr(next));
-};
+exports.updateGroup = op('updateGroup', 'group', 'permissions');
 
-exports.destroyGroup = function destroyGroup(req, res, next) {
-  req.permitStore.deleteGroup(...parse(req, 'group'), errOr(next));
-};
+exports.destroyGroup = op('destroyGroup', 'group');
 
 // Permission Operations -------------------------------------------------------
 
-exports.addGroupPermission = function addGroupPermission(req, res, next) {
-  req.permitStore.addGroupPermission(
-    ...parse(req, 'group', 'permission', 'suite?'),
-    errOr(next)
-  );
-};
+exports.addGroupPermission = op(
+  'addGroupPermission', 'group', 'permission', 'suite?'
+);
 
-exports.removeGroupPermission = function removeGroupPerm(req, res, next) {
-  req.permitStore.removeGroupPermission(
-    ...parse(req, 'group', 'permission', 'suite?'), errOr(next)
-  );
-};
+exports.removeGroupPermission = op(
+  'removeGroupPermission', 'group', 'permission', 'suite?'
+);
 
-exports.blockGroupPermission = function blockGroupPermission(req, res, next) {
-  req.permitStore.blockGroupPermission(
-    ...parse(req, 'group', 'permission', 'suite?'), errOr(next)
-  );
-};
+exports.blockGroupPermission = op(
+  'blockGroupPermission', 'group', 'permission', 'suite?'
+);
 
-// Helpers =====================================================================
-function parse() {
-  var err = [];
-  var req = arguments[0];
-  var params = Array.prototype.slice.call(arguments, 1);
-
-  var args = params.map(function (param) {
-    var required = true;
-
-    // If the param is annotated with a ? at the end, the param is optional
-    if (param[param.length - 1] === '?') {
-      param = param.slice(0, -1);
-      required = false;
-    }
-
-    let parse = req.params[param] || req.query[param];
-    if (req.body && req.body[param]) {
-      parse = req.body[param];
-    }
-
-    if (!parse && required) {
-      err.push(new ValidationError(`Missing required parameter: ${param}`));
-    }
-
-    return parse;
-  });
-
-  if (err.length > 0) {
-    return new ValidationError(err);
-  }
-
-  return args;
-}
-
-function errOr(next) {
-  return function (err) {
-    if (err) {
-      var error = new Error('An occured error in express-permit\'s store.\n' + //jshint ignore:line
-                            'See Error.Additional for more details');
-      error.additional = err;
-    }
-
-    next();
-  };
-}

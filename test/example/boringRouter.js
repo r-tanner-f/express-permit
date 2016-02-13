@@ -3,7 +3,7 @@
 var Express = require('express');
 var boringRouter = Express.Router();
 
-var boring = require('../../../src/index.js').tag('boring', boringRouter);
+var boring = require('../../src/index.js').tag('boring', boringRouter);
 
 boringRouter.get('/twiddle', boring('be-bored'), function (req, res) {
   res.send('twiddling thumbs is actually entertaining after a few hours...');

@@ -3,7 +3,7 @@
 var Express = require('express');
 var moarBoringRouter    = Express.Router();
 
-var moarBoring = require('../../../src/index.js')
+var moarBoring = require('../../src/index.js')
 .tag('moarBoring', moarBoringRouter);
 
 moarBoringRouter.get('/look-bored', moarBoring('be-boring'),

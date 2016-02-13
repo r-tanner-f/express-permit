@@ -3,7 +3,7 @@
 var Express = require('express');
 
 var amusementRouter     = Express.Router();
-var amusement = require('../../../src/index.js')
+var amusement = require('../../src/index.js')
 .tag('amusement', amusementRouter);
 
 amusementRouter.get('/rides', amusement('go-on-rides'), function (req, res) {

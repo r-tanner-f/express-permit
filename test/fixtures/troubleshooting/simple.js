@@ -3,15 +3,9 @@
 var Express = require('express');
 var router = Express.Router();
 
-var permit = require('../../src/index.js').tag(router);
-var tree = require('../../src/index.js').tree;
-
+var permit = require('../../../src/index.js').check;
 router.get('/', permit('haveFun'), function (req, res) {
   res.send('yaaay');
-});
-
-router.get('/tree', tree, function (req, res) {
-  res.json(res.locals.permissionSet);
 });
 
 var app = require('./common')(router, {
@@ -23,8 +17,8 @@ var app = require('./common')(router, {
         },
       },
       terribleUser: {
-        root: {
-          permissions: {
+        permissions: {
+          root: {
             haveFun: false,
           },
         },

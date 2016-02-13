@@ -1,8 +1,8 @@
 'use strict';
 
 module.exports = function (router, users) {
-  var permissions = require('../../src/index.js');
-  var InMemoryPermits = require('../../src/index.js').InMemoryPermits;
+  var permissions = require('../../../src/index.js');
+  var InMemoryPermits = require('../../../src/index.js').InMemoryPermits;
 
   var Express = require('express');
 

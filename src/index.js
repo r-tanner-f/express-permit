@@ -15,10 +15,26 @@ expressPermit.error = tags.PermissionsError;
 expressPermit.api = api;
 module.exports = expressPermit;
 
+class NotFoundError {
+  constructor(message) {
+    this.message = message;
+  }
+
+  toString() {
+    return this.message;
+  }
+}
+
 function expressPermit(options) {
   var store = options.store;
+  options.store.NotFoundError = NotFoundError;
 
   return function (req, res, next) {
+    res.locals.permitAPI = {};
+    res.locals.permitAPI.NotFoundError = NotFoundError;
+    res.locals.permitAPI.PermissionsError = tags.PermissionsError;
+    res.locals.permitAPI.ValidationError = api.ValidationError;
+
     store.read(eval(options.username), function (err, user) { //jshint ignore:line
       if (err) {next(err);}
 

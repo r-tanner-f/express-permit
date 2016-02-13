@@ -3,7 +3,7 @@
 var Express = require('express');
 var moarAmusementRouter = Express.Router();
 
-var moarAmusement = require('../../../src/index.js')
+var moarAmusement = require('../../src/index.js')
 .tag('amusement', moarAmusementRouter);
 
 moarAmusementRouter.get('/games', moarAmusement('play-games'),
