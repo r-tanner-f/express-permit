@@ -1,9 +1,11 @@
 'use strict';
 
 var clone = require('lodash.clonedeep');
+var Store = require('express-permit-store');
 
-class MemoryPermits {
+class MemoryPermits extends Store {
   constructor(users, groups) {
+    super();
     if (users && Array.isArray(users)) {
       throw new TypeError(
         'MemoryPermits constructor expected an object of users NOT an array'
@@ -25,7 +27,7 @@ class MemoryPermits {
 // CRUD ------------------------------------------------------------------------
   create(username, permit, callback) {
     if (this.users[username]) {
-      return callback(new this.NotFoundError('User already exists'));
+      return callback(new this.Conflict('User already exists'));
     }
 
     this.users[username] = permit;
@@ -33,6 +35,10 @@ class MemoryPermits {
   }
 
   read(username, callback) {
+    if (!this.users[username]) {
+      return callback(new this.NotFoundError('User does not exist'));
+    }
+
     var user = clone(this.users[username]);
     if (user && user.groups) {
       user.groups = user.groups.map(group => (this.groups[group]));
@@ -62,12 +68,6 @@ class MemoryPermits {
 // Permission Operations -------------------------------------------------------
 
   addPermission(username, permission, suite, callback) {
-
-    // TODO move this to wrapper
-    if (!suite) {
-      suite = 'root';
-    }
-
     if (!this.users[username]) {
       return callback(new this.NotFoundError('User does not exist'));
     }
@@ -81,11 +81,6 @@ class MemoryPermits {
   }
 
   removePermission(username, permission, suite, callback) {
-    // TODO move this to wrapper
-    if (!suite) {
-      suite = 'root';
-    }
-
     if (!this.users[username]) {
       return callback(new this.NotFoundError('User does not exist'));
     }
@@ -103,20 +98,7 @@ class MemoryPermits {
     callback();
   }
 
-  updatePermissions(username, permissions, callback) {
-    if (!this.users[username]) {
-      return callback(new this.NotFoundError('User does not exist'));
-    }
-
-    this.users[username].permissions = permissions;
-  }
-
   blockPermission(username, permission, suite, callback) {
-    // TODO move this to wrapper
-    if (!suite) {
-      suite = 'root';
-    }
-
     if (!this.users[username]) {
       return callback(new this.NotFoundError('User does not exist'));
     }
@@ -137,7 +119,7 @@ class MemoryPermits {
     }
 
     if (this.users[username].groups.indexOf(group) !== -1) {
-      return callback(new this.NotFoundError('User is already in group'));
+      return callback(new this.Conflict('User is already in group'));
     }
 
     if (!this.groups[group]) {
@@ -170,7 +152,7 @@ class MemoryPermits {
 // CRUD ------------------------------------------------------------------------
   createGroup(group, permissions, callback) {
     if (this.groups[group]) {
-      return callback(new this.NotFoundError('Group already exists'));
+      return callback(new this.Conflict('Group already exists'));
     }
 
     this.groups[group] = permissions;
@@ -206,14 +188,8 @@ class MemoryPermits {
 // Permission Operations -------------------------------------------------------
 
   addGroupPermission(group, permission, suite, callback) {
-    debugger;
     if (!this.groups[group]) {
       return callback(new this.NotFoundError('Group does not exist'));
-    }
-
-    // TODO move this to wrapper
-    if (!suite) {
-      suite = 'root';
     }
 
     if (!this.groups[group][suite]) {
@@ -227,11 +203,6 @@ class MemoryPermits {
   removeGroupPermission(group, permission, suite, callback) {
     if (!this.groups[group]) {
       return callback(new this.NotFoundError('Group does not exist'));
-    }
-
-    // TODO move this to wrapper
-    if (!suite) {
-      suite = 'root';
     }
 
     if (!this.groups[group][suite]) {
@@ -249,11 +220,6 @@ class MemoryPermits {
   blockGroupPermission(group, permission, suite, callback) {
     if (!this.groups[group]) {
       return callback(new this.NotFoundError('Group does not exist'));
-    }
-
-    // TODO move this to wrapper
-    if (!suite) {
-      suite = 'root';
     }
 
     if (!this.groups[group][suite]) {

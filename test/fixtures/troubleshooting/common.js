@@ -19,7 +19,7 @@ module.exports = function (router, users) {
   app.use(permissions({
     //store: new MongoPermits(options)
     store: new InMemoryPermits(users),
-    username: 'req.session.username',
+    username: req => req.session.username,
   }));
 
   app.get('/login/awesome-user', function (req, res) {

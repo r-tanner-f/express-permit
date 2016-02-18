@@ -266,10 +266,9 @@ describe('API', function () {
     ));
   });
 
-  
   after(function () {
     console.log(util.inspect(groups, { depth: null }));
   });
- 
+
 });
 

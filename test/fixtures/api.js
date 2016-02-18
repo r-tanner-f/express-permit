@@ -49,7 +49,7 @@ var groups = {
 
 app.use(permissions({
   store: new permissions.InMemoryPermits(users, groups),
-  username: 'req.session.username',
+  username: req => req.session.username,
 }));
 
 app.get('/login/:user', function (req, res) {

@@ -150,7 +150,7 @@ describe('Example usage', function () {
     });
   });
 
-  it('should produce an accurate permissions lsit', function (done) {
+  it('should produce an accurate permissions list', function (done) {
     var agent = supertest.agent(amusementPark);
 
     testTree(agent, {

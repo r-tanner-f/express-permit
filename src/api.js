@@ -1,10 +1,10 @@
 'use strict';
 
-var validation = require('./validation');
-var ValidationError = validation.ValidationError;
+var flatten = require('lodash.flattendeep');
 
-exports.validation = validation.middleware;
-exports.ValidationError = ValidationError;
+var validation = require('./validation');
+var validators = validation.validators;
+var ValidationError = validation.ValidationError;
 
 function op() {
   var op     = arguments[0];
@@ -43,18 +43,50 @@ function op() {
 
     req.permitStore[op](...args, function (err, result) {
       res.locals.permitAPI.result = result;
-
       if (err) {
         var error = new Error('An occured error in express-permit\'s store.\n' +
                               'See Error.Additional for more details');
         error.additional = err;
-        next(err);
+        return next(err);
       }
 
-      next();
+      return next();
     });
   };
 }
+
+function validate(params) {
+  var err = [];
+  for (var key in params) {
+    err.push(validators[key](params[key]));
+  }
+
+  return err;
+}
+
+exports.validation = function validation(req, res, next) {
+  var err = Array.prototype.concat(
+    validate(req.params, true),
+    validate(req.query, true)
+  );
+
+  if (req.body) {
+    err.push(...validate(req.body, true));
+  }
+
+  err = flatten(err);
+
+  // Remove all falsey values from array
+  err = err.filter(function (e) {
+    return Boolean(e);
+  });
+
+  if (err.length > 0) {
+    return next(new ValidationError(err));
+  }
+
+  next();
+};
 
 // Users =======================================================================
 

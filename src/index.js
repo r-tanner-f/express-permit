@@ -3,11 +3,13 @@
 var clone    = require('lodash.clonedeep');
 var traverse = require('traverse');
 
-var api = require('./api/');
+var api = require('./api');
 var tags = require('./tags');
+var validation = require('./validation');
+var StoreWrapper = require('./store').wrapper;
 
 expressPermit.tree = listSuites;
-expressPermit.InMemoryPermits = require('./memoryPermits');
+expressPermit.InMemoryPermits = require('./memory');
 expressPermit.tag = tags.initTag;
 expressPermit.Tagger = tags.Tagger;
 expressPermit.check = tags.check;
@@ -15,37 +17,42 @@ expressPermit.error = tags.PermissionsError;
 expressPermit.api = api;
 module.exports = expressPermit;
 
-class NotFoundError {
-  constructor(message) {
-    this.message = message;
-  }
-
-  toString() {
-    return this.message;
-  }
-}
-
 function expressPermit(options) {
-  var store = options.store;
-  options.store.NotFoundError = NotFoundError;
+  if (typeof options.username !== 'function') {
+    throw new TypeError(
+      `express-permit requires a username function. Got ${options.username}.`
+    );
+  }
+
+  var store = new StoreWrapper(options.store);
 
   return function (req, res, next) {
     res.locals.permitAPI = {};
-    res.locals.permitAPI.NotFoundError = NotFoundError;
+
+    res.locals.permitAPI.NotFoundError = options.store.NotFoundError;
+    res.locals.permitAPI.Conflict = options.store.Conflict;
+
     res.locals.permitAPI.PermissionsError = tags.PermissionsError;
-    res.locals.permitAPI.ValidationError = api.ValidationError;
+    res.locals.permitAPI.ValidationError = validation.ValidationError;
 
-    store.read(eval(options.username), function (err, user) { //jshint ignore:line
-      if (err) {next(err);}
+    req.permitStore = store;
 
-      if (!user) {
-        req.permits = {};
+    if (!options.username(req)) {
+      return next();
+    }
+
+    store.read(options.username(req), function (err, user) {
+
+      // TODO Nail down behavior when user does not exist but is supplied
+      if (err instanceof options.store.NotFoundError) {
+        req.permits = false;
+      } else if (err) {
+        return next(err);
       } else {
         req.permits = compilePermissions(user);
       }
 
-      req.permitStore = store;
-      next();
+      return next();
     });
   };
 }
@@ -123,13 +130,6 @@ function listSuites(req, res, next) {
   var permissionSet = {};
 
   map.forEach(function (set, key) {
-
-    // Combine _root and root.
-    // Separated to differentiate between implicit and explicit root.
-    // Just in case it's needed later...
-    if (key === '_root') {
-      key = 'root';
-    }
 
     if (!permissionSet[key]) {
       permissionSet[key] = [];
