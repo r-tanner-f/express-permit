@@ -15,6 +15,12 @@ function validateAndRun(opname, args, op, callback) {
   op();
 }
 
+function defaultSuite(args) {
+  if (!args.suite) {
+    args.suite = 'root';
+  }
+}
+
 class StoreWrapper {
   constructor(store) {
     this.store = store;
@@ -60,9 +66,7 @@ class StoreWrapper {
 
   // Permission Operations -----------------------------------------------------
   addPermission(args, callback) {
-    if (!args.suite) {
-      args.suite = 'root';
-    }
+    defaultSuite(args);
 
     validateAndRun(
       'addPermission',
@@ -75,9 +79,7 @@ class StoreWrapper {
   }
 
   removePermission(args, callback) {
-    if (!args.suite) {
-      args.suite = 'root';
-    }
+    defaultSuite(args);
 
     validateAndRun(
       'removePermission',
@@ -90,9 +92,7 @@ class StoreWrapper {
   }
 
   blockPermission(args, callback) {
-    if (!args.suite) {
-      args.suite = 'root';
-    }
+    defaultSuite(args);
 
     validateAndRun(
       'blockPermission',
@@ -164,9 +164,7 @@ class StoreWrapper {
 
   // Permission Operations -----------------------------------------------------
   addGroupPermission(args, callback) {
-    if (!args.suite) {
-      args.suite = 'root';
-    }
+    defaultSuite(args);
 
     validateAndRun(
       'addGroupPermission',
@@ -179,9 +177,7 @@ class StoreWrapper {
   }
 
   removeGroupPermission(args, callback) {
-    if (!args.suite) {
-      args.suite = 'root';
-    }
+    defaultSuite(args);
 
     validateAndRun(
       'removeGroupPermission',
@@ -194,6 +190,8 @@ class StoreWrapper {
   }
 
   blockGroupPermission(args, callback) {
+    defaultSuite(args);
+
     validateAndRun(
       'blockGroupPermission',
       args,

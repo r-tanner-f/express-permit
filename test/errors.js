@@ -103,25 +103,6 @@ describe('Error handling:', function () {
 
   // Begin API =================================================================
   describe('API', function () {
-    /* This got a little mock heavy. Needs a rework.
-    it.only(
-      'should next a validation error when a required parameter is missing',
-       function (done) {
-         expressPermit.api.create(
-           { params: {}, query: {}, permitStore: {create: function()}},
-           { locals: { permitAPI: {} } },
-           function (err) {
-             expect(err).to.exist();
-             expect(err).to.be.an.instanceof(ValidationError);
-             expect(err.details).to.be.an('array');
-             expect(err.details[0].message).to.equal(
-               'Missing required parameter: username'
-             );
-             done();
-           });
-       }
-    );
-    */
     it(
       'should next an Error if the underlying store returns an error',
       function (done) {
@@ -295,7 +276,7 @@ describe('Error handling:', function () {
     });
 
     it('should catch errors and return them in callback', function () {
-      store.read({username: 123}, function (err) {
+      store.read({ username: 123 }, function (err) {
         expect(err).to.be.an.instanceof(ValidationError);
         expect(err).to.deep.equal({
           message: 'Username must be a string. Got number: 123',

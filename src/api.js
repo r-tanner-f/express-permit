@@ -26,7 +26,7 @@ function runOp(op, params) {
       // Add parameter to our arguments object.
       args[param] = parse;
     });
-    debugger;
+
     // Call the op with arguments object we built
     req.permitStore[op](args, function (err, result) {
 

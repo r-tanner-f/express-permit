@@ -41,18 +41,33 @@ function expressPermit(options) {
       return next();
     }
 
-    store.read({ username: options.username(req) }, function (err, user) {
+    var username = options.username(req);
+    store.read({ username: username }, function (err, user) {
 
-      // TODO Nail down behavior when user does not exist but is supplied
+      // No permissions found for this user
       if (err instanceof options.store.NotFoundError) {
-        req.permits = false;
+
+        // Build defaults and save
+        var defaultPermit = options.defaultPermit || {
+          permissions: {},
+          groups: ['default'],
+        };
+
+        store.create(
+          { username: username, permit: defaultPermit },
+          function (err) {
+            if (err) {return next(err);}
+
+            return next();
+          }
+        );
+        req.permits = defaultPermit;
       } else if (err) {
         return next(err);
       } else {
         req.permits = compilePermissions(user);
+        return next();
       }
-
-      return next();
     });
   };
 }
