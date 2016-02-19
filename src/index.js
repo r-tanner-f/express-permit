@@ -41,7 +41,7 @@ function expressPermit(options) {
       return next();
     }
 
-    store.read(options.username(req), function (err, user) {
+    store.read({ username: options.username(req) }, function (err, user) {
 
       // TODO Nail down behavior when user does not exist but is supplied
       if (err instanceof options.store.NotFoundError) {

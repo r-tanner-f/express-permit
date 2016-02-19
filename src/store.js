@@ -1,34 +1,15 @@
 'use strict';
 
-var validation = require('./validation');
-var ValidationError = validation.ValidationError;
-var validators = validation.validators;
+var validate = require('./validation').validateOp;
 
-class ErrCollector {
-  constructor() {
-    var errs = [];
-    Object.defineProperty(errs, 'add', {
-      enumerable: false,
-      value: function add(err) {
-        if (err) {errs.push(err);}
-      },
-    });
-    return errs;
-  }
-}
-
-function validateAndRun(validation, op, callback) {
+function validateAndRun(opname, args, op, callback) {
   if (!callback) {
     throw new Error('Callback is required');
   }
 
-  var err = new ErrCollector();
-  validation.forEach(function (v) {
-    err.add(v);
-  });
-
-  if (err.length) {
-    return callback(new ValidationError(err));
+  var err = validate(opname, args);
+  if (err) {
+    return callback(err);
   }
 
   op();
@@ -40,122 +21,104 @@ class StoreWrapper {
   }
 
   // Users =====================================================================
-  create(username, permit, callback) {
+
+  create(args, callback) {
     validateAndRun(
-      [
-        validators.username(username),
-        validators.permit(permit),
-      ],
-      () => this.store.create(username, permit, callback),
+      'create',
+      args,
+      () => this.store.create(args.username, args.permit, callback),
       callback
     );
   }
 
-  read(username, callback) {
+  read(args, callback) {
     validateAndRun(
-      [validators.username(username)],
-      () => this.store.read(username, callback),
+      'read',
+      args,
+      () => this.store.read(args.username, callback),
       callback
     );
   }
 
-  update(username, permit, callback) {
+  update(args, callback) {
     validateAndRun(
-      [
-        validators.username(username),
-        validators.permit(permit),
-      ],
-      () => this.store.update(username, permit, callback),
+      'update',
+      args,
+      () => this.store.update(args.username, args.permit, callback),
       callback
     );
   }
 
-  destroy(username, callback) {
+  destroy(args, callback) {
     validateAndRun(
-      [validators.username(username)],
-      () => this.store.destroy(username, callback),
+      'destroy',
+      args,
+      () => this.store.destroy(args.username, callback),
       callback
     );
   }
 
   // Permission Operations -----------------------------------------------------
-  addPermission(username, permission, suite, callback) {
-    if (typeof suite === 'function' && !callback) {
-      callback = suite;
-      suite = 'root';
-    }
-
-    if (!suite) {
-      suite = 'root';
+  addPermission(args, callback) {
+    if (!args.suite) {
+      args.suite = 'root';
     }
 
     validateAndRun(
-      [
-        validators.username(username),
-        validators.permission(permission),
-        validators.suite(suite),
-      ],
-
-      () => this.store.addPermission(username, permission, suite, callback),
+      'addPermission',
+      args,
+      () => this.store.addPermission(
+        args.username, args.permission, args.suite, callback
+      ),
       callback
     );
   }
 
-  removePermission(username, permission, suite, callback) {
-    if (typeof suite === 'function' && !callback) {
-      callback = suite;
-      suite = 'root';
-    }
-
-    if (!suite) {
-      suite = 'root';
+  removePermission(args, callback) {
+    if (!args.suite) {
+      args.suite = 'root';
     }
 
     validateAndRun(
-      [
-        validators.username(username),
-        validators.permission(permission),
-        validators.suite(suite),
-      ],
-      () => this.store.removePermission(username, permission, suite, callback),
+      'removePermission',
+      args,
+      () => this.store.removePermission(
+        args.username, args.permission, args.suite, callback
+      ),
       callback
     );
   }
 
-  blockPermission(username, permission, suite, callback) {
-    if (typeof suite === 'function' && !callback) {
-      callback = suite;
-      suite = 'root';
-    }
-
-    if (!suite) {
-      suite = 'root';
+  blockPermission(args, callback) {
+    if (!args.suite) {
+      args.suite = 'root';
     }
 
     validateAndRun(
-      [
-        validators.username(username),
-        validators.permission(permission),
-        validators.suite(suite),
-      ],
-      () => this.store.blockPermission(username, permission, suite, callback),
+      'blockPermission',
+      args,
+      () => this.store.blockPermission(
+        args.username, args.permission, args.suite, callback
+      ),
       callback
     );
   }
 
   // Group Operations ----------------------------------------------------------
-  addGroup(username, group, callback) {
+  addGroup(args, callback) {
     validateAndRun(
-      [validators.username(username), validators.group(group)],
-      () => this.store.addGroup(username, group, callback),
+      'addGroup',
+      args,
+      () => this.store.addGroup(args.username, args.group, callback),
       callback
     );
   }
 
-  removeGroup(username, group, callback) {
+  removeGroup(args, callback) {
     validateAndRun(
-      [validators.username(username), validators.group(group)],
-      () => this.store.removeGroup(username, group, callback),
+      'removeGroup',
+      args,
+      () => this.store.removeGroup(args.username, args.group, callback),
       callback
     );
   }
@@ -163,92 +126,79 @@ class StoreWrapper {
   // Groups ====================================================================
 
   // CRUD ----------------------------------------------------------------------
-  createGroup(group, permissions, callback) {
+  createGroup(args, callback) {
     validateAndRun(
-      [validators.group(group), validators.permissions(permissions)],
-      () => this.store.createGroup(group, permissions, callback),
+      'createGroup',
+      args,
+      () => this.store.createGroup(args.group, args.permissions, callback),
       callback
     );
   }
 
-  readGroup(group, callback) {
+  readGroup(args, callback) {
     validateAndRun(
-      [validators.group(group)],
-      () => this.store.readGroup(group, callback),
+      'readGroup',
+      args,
+      () => this.store.readGroup(args.group, callback),
       callback
     );
   }
 
-  updateGroup(group, permissions, callback) {
+  updateGroup(args, callback) {
     validateAndRun(
-      [validators.group(group), validators.permissions(permissions)],
-      () => this.store.updateGroup(group, permissions, callback),
+      'updateGroup',
+      args,
+      () => this.store.updateGroup(args.group, args.permissions, callback),
       callback
     );
   }
 
-  destroyGroup(group, callback) {
+  destroyGroup(args, callback) {
     validateAndRun(
-      [validators.group(group)],
-      () => this.store.destroyGroup(group, callback),
+      'destroyGroup',
+      args,
+      () => this.store.destroyGroup(args.group, callback),
       callback
     );
   }
 
   // Permission Operations -----------------------------------------------------
-  addGroupPermission(group, permission, suite, callback) {
-    if (typeof suite === 'function' && !callback) {
-      callback = suite;
-      suite = 'root';
-    }
-
-    if (!suite) {
-      suite = 'root';
+  addGroupPermission(args, callback) {
+    if (!args.suite) {
+      args.suite = 'root';
     }
 
     validateAndRun(
-      [
-        validators.group(group),
-        validators.permission(permission),
-        validators.suite(suite),
-      ],
-      () => this.store.addGroupPermission(group, permission, suite, callback),
-      callback
-    );
-  }
-
-  removeGroupPermission(group, permission, suite, callback) {
-    if (typeof suite === 'function' && !callback) {
-      callback = suite;
-      suite = 'root';
-    }
-
-    if (!suite) {
-      suite = 'root';
-    }
-
-    validateAndRun(
-      [
-        validators.group(group),
-        validators.permission(permission),
-        validators.suite(suite),
-      ],
-      () => this.store.removeGroupPermission(
-        group, permission, suite, callback
+      'addGroupPermission',
+      args,
+      () => this.store.addGroupPermission(
+        args.group, args.permission, args.suite, callback
       ),
       callback
     );
   }
 
-  blockGroupPermission(group, permission, suite, callback) {
+  removeGroupPermission(args, callback) {
+    if (!args.suite) {
+      args.suite = 'root';
+    }
+
     validateAndRun(
-      [
-        validators.group(group),
-        validators.permission(permission),
-        validators.suite(suite),
-      ],
+      'removeGroupPermission',
+      args,
+      () => this.store.removeGroupPermission(
+        args.group, args.permission, args.suite, callback
+      ),
+      callback
+    );
+  }
+
+  blockGroupPermission(args, callback) {
+    validateAndRun(
+      'blockGroupPermission',
+      args,
       () => this.store.blockGroupPermission(
-        group, permission, suite, callback
+        args.group, args.permission, args.suite, callback
       ),
       callback
     );

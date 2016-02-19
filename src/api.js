@@ -1,144 +1,48 @@
 'use strict';
 
-var flatten = require('lodash.flattendeep');
+var descriptors = require('./descriptors');
 
-var validation = require('./validation');
-var validators = validation.validators;
-var ValidationError = validation.ValidationError;
-
-function op() {
-  var op     = arguments[0];
-  var params = Array.prototype.slice.call(arguments, 1);
-
+function runOp(op, params) {
   return function (req, res, next) {
-    var err = [];
+    var args = {};
 
-    var args = params.map(function (param) {
-      var required = true;
+    params.forEach(function (param) {
 
-      // If the param is annotated with a ? at the end, the param is optional
+      // Remove '?' annotation from descriptor.
       if (param[param.length - 1] === '?') {
         param = param.slice(0, -1);
-        required = false;
       }
 
+      // Check for parameter in req body, param, or query in that order.
       let parse = req.params[param] || req.query[param];
       if (req.body && req.body[param]) {
         parse = req.body[param];
       }
 
-      if (!parse && required) {
-        err.push(new ValidationError(`Missing required parameter: ${param}`));
-      }
-
-      // Dump the param to res.locals
-      // So it can be rendered on confirmation pages and the like
+      // Dump the param to res.locals.
+      // So it can be rendered on confirmation pages and the like.
       res.locals.permitAPI[param] = parse;
-      return parse;
+
+      // Add parameter to our arguments object.
+      args[param] = parse;
     });
+    debugger;
+    // Call the op with arguments object we built
+    req.permitStore[op](args, function (err, result) {
 
-    if (err.length > 0) {
-      return next(new ValidationError(err));
-    }
-
-    req.permitStore[op](...args, function (err, result) {
-      res.locals.permitAPI.result = result;
+      // Validation errors may occur here
       if (err) {
-        var error = new Error('An occured error in express-permit\'s store.\n' +
-                              'See Error.Additional for more details');
-        error.additional = err;
         return next(err);
       }
 
+      // Put the result (if any) on the res.locals
+      res.locals.permitAPI.result = result;
       return next();
     });
   };
 }
 
-function validate(params) {
-  var err = [];
-  for (var key in params) {
-    err.push(validators[key](params[key]));
-  }
-
-  return err;
+// Maybe enumerate the ops manually for the sake of documentation and testing
+for (let op in descriptors) {
+  exports[op] = runOp(op, descriptors[op]);
 }
-
-exports.validation = function validation(req, res, next) {
-  var err = Array.prototype.concat(
-    validate(req.params, true),
-    validate(req.query, true)
-  );
-
-  if (req.body) {
-    err.push(...validate(req.body, true));
-  }
-
-  err = flatten(err);
-
-  // Remove all falsey values from array
-  err = err.filter(function (e) {
-    return Boolean(e);
-  });
-
-  if (err.length > 0) {
-    return next(new ValidationError(err));
-  }
-
-  next();
-};
-
-// Users =======================================================================
-
-exports.create = op('create', 'username', 'permit');
-
-exports.read = op('read', 'username');
-
-exports.update = op('update', 'username', 'permit');
-
-exports.destroy = op('destroy', 'username');
-
-// Permission Operations -------------------------------------------------------
-
-exports.addPermission = op('addPermission', 'username', 'permission', 'suite?');
-
-exports.removePermission = op(
-  'removePermission', 'username', 'permission', 'suite?'
-);
-
-exports.blockPermission = op(
-  'blockPermission', 'username', 'permission', 'suite?'
-);
-
-// Group Operations ------------------------------------------------------------
-
-exports.addGroup = op('addGroup', 'username', 'group');
-
-exports.removeGroup = op('removeGroup', 'username', 'group');
-
-// Groups ======================================================================
-
-// CRUD ------------------------------------------------------------------------
-
-exports.createGroup = op('createGroup', 'group', 'permissions');
-
-exports.readGroup = op('readGroup', 'group');
-
-exports.updateGroup = op('updateGroup', 'group', 'permissions');
-
-exports.destroyGroup = op('destroyGroup', 'group');
-
-// Permission Operations -------------------------------------------------------
-
-exports.addGroupPermission = op(
-  'addGroupPermission', 'group', 'permission', 'suite?'
-);
-
-exports.removeGroupPermission = op(
-  'removeGroupPermission', 'group', 'permission', 'suite?'
-);
-
-exports.blockGroupPermission = op(
-  'blockGroupPermission', 'group', 'permission', 'suite?'
-);
-

@@ -61,8 +61,6 @@ function ok(req, res) {
   res.sendStatus(200);
 }
 
-app.use(api.validation);
-
 // Users =======================================================================
 
 app.post('/user/:username', api.create, ok);

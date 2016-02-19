@@ -1,6 +1,7 @@
 'use strict';
 
 var flatten = require('lodash.flattendeep');
+var descriptors = require('./descriptors');
 
 class ValidationError {
   constructor(err) {
@@ -30,7 +31,6 @@ class ValidationError {
     return 'ValidationError -- ' + (this.details || this.message);
   }
 }
-exports.ValidationError = ValidationError;
 
 const validators = {
   username: u => typeof u === 'string' ? null :
@@ -112,5 +112,45 @@ const validators = {
     }
   },
 };
-exports.validators = validators;
 
+function validateOp(op, args) {
+  // Get our list of parameters from the op descriptors
+  var params = descriptors[op];
+
+  var err = [];
+
+  // Iterate over each param we need
+  params.forEach(function (param) {
+    var required = true;
+
+    // If the param is annotated with a ? at the end, the param is optional
+    if (param[param.length - 1] === '?') {
+      param = param.slice(0, -1);
+      required = false;
+    }
+
+    // If we don't have the param and it's required, create an error string
+    if (!args[param] && required) {
+      err.push(`Missing required parameter: ${param}`);
+    } else {
+      err.push(validators[param](args[param]));
+    }
+
+  });
+
+  err = flatten(err);
+
+  // Remove all falsey values from array -- validators return null
+  err = err.filter(function (e) {
+    return Boolean(e);
+  });
+
+  // If we have any errs, wrap them in a ValidationError and return
+  if (err.length) {
+    return new ValidationError(err);
+  }
+}
+
+exports.ValidationError = ValidationError;
+exports.validators = validators;
+exports.validateOp = validateOp;
