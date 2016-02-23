@@ -1,3 +1,5 @@
+'use strict';
+
 var supertest = require('supertest');
 
 module.exports = function (app) {

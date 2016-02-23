@@ -44,6 +44,32 @@ describe('API', function () {
     .expect(400, done);
   });
 
+  // readAll ===================================================================
+
+  it('should read all users', function (done) {
+    agent
+    .get('/users')
+    .expect(200)
+    .end(function (err, result) {
+      if (err) {throw err;}
+
+      expect(result.body).to.deep.equal(users);
+      done();
+    });
+  });
+
+  it('should read all groups', function (done) {
+    agent
+    .get('/groups')
+    .expect(200)
+    .end(function (err, result) {
+      if (err) {throw err;}
+
+      expect(result.body).to.deep.equal(groups);
+      done();
+    });
+  });
+
   // Users =====================================================================
 
   it('should create a user', function (done) {
@@ -77,6 +103,20 @@ describe('API', function () {
     });
   });
 
+  it('should get the rsop for a user', function (done) {
+    agent
+    .get('/user/rsop/rsopUser')
+    .expect(200)
+    .end(function (err, result) {
+      if (err) throw err;
+      expect(result.body).to.deep.equal({
+        'block-test': { 'block-me': false },
+        'group-test': { 'some-perm': true, 'add-me': true },
+      });
+      done();
+    });
+  });
+
   it('should update a user', function (done) {
     var update = {
       permit: { permissions: { root: { updated: true } }, groups: [], },
@@ -101,6 +141,28 @@ describe('API', function () {
     .end(function (err) {
       if (err) throw err;
       expect(users.deletableUser).to.not.exist();
+      done();
+    });
+  });
+
+  it('should set a user to admin', function (done) {
+    agent
+    .get('/setAdmin/nonAdmin')
+    .expect(200)
+    .end(function (err) {
+      if (err) throw err;
+      expect(users.nonAdmin.permissions).to.equal('admin');
+      done();
+    });
+  });
+
+  it('should set a user to owner', function (done) {
+    agent
+    .get('/setOwner/nonOwner')
+    .expect(200)
+    .end(function (err) {
+      if (err) throw err;
+      expect(users.nonOwner.permissions).to.equal('owner');
       done();
     });
   });

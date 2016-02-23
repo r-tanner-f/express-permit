@@ -10,7 +10,6 @@ var boringRouter = require('./boringRouter');
 var moarBoringRouter = require('./moarBoringRouter');
 
 var permissions = require('../../src/index.js');
-var MemoryPermitStore = permissions.MemoryPermitStore(permissions);
 var check = permissions.check;
 
 var users = {
@@ -38,10 +37,6 @@ var users = {
 
   proprietor: {
     permissions: 'owner',
-  },
-
-  manager: {
-    permissions: 'admin',
   },
 
   employee: {
@@ -86,7 +81,7 @@ app.use(session({
 }));
 
 app.use(permissions({
-  store: new MemoryPermitStore(users, groups),
+  store: new permissions.MemoryPermitStore(users, groups),
   username: req => req.session.username,
 }));
 

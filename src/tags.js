@@ -1,19 +1,8 @@
 'use strict';
 
-class PermissionsError {
-  constructor(req, action, suite) {
-    this.message = `Permissions Error: Required ${suite} ${action}`;
-    this.name = this.constructor.name;
-    this.baseUrl = req.baseUrl;
-    this.route   = req.route;
-    this.action  = action;
-    this.suite = suite;
-    this.permits = req.permits;
-  }
-}
-exports.PermissionsError = PermissionsError;
+var Forbidden = require('./errors').Forbidden;
 
-class Tagger { //jshint ignore:line
+class Tagger {
   constructor() {
 
     // Three possible inputs
@@ -77,31 +66,35 @@ class Tagger { //jshint ignore:line
     }
   }
 }
+
+// Not sure this actually needs to be exported
 exports.Tagger = Tagger;
 
-// TODO clean up this garbage
 function check(action, suite) {
   if (!suite) {suite = 'root';}
 
   return function permitCheck(req, res, next) {
-    // If for some reason there is no req.permits,
+    // If for some reason there is no res.locals.permit,
     // this will prevent goofy errors from happening.
-    if (req.permits) {
-      if (suite === 'root' && req.permits[action] === true) {
+    if (res.locals.permit) {
+      if (suite === 'root' && res.locals.permit[action] === true) {
+        // TODO for srs this needs to be implemented =\
         return next();
       }
 
       if (
-        req.permits[suite]                     &&
-        req.permits[suite][action] === true    ||
-        req.permits                === 'admin' ||
-        req.permits[suite]         === 'admin'
+        res.locals.permit === 'owner' ||
+        res.locals.permit === 'admin'
+      ) {return next();} else if (
+        res.locals.permit[suite]                     &&
+        res.locals.permit[suite][action] === true    ||
+        res.locals.permit[suite]         === 'all'
       ) {
         return next();
       }
     }
 
-    var err = new PermissionsError(req, action, suite);
+    var err = new Forbidden(res, action, suite);
     next(err);
   };
 }

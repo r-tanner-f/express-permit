@@ -1,22 +1,37 @@
 'use strict';
 
-var clone    = require('lodash.clonedeep');
-var traverse = require('traverse');
-
-var api = require('./api');
 var tags = require('./tags');
-var validation = require('./validation');
-var StoreWrapper = require('./store').wrapper;
+var StoreWrapper = require('./wrapper');
 
-expressPermit.tree = listSuites;
-expressPermit.InMemoryPermits = require('./memory');
-expressPermit.tag = tags.initTag;
-expressPermit.Tagger = tags.Tagger;
-expressPermit.check = tags.check;
-expressPermit.error = tags.PermissionsError;
-expressPermit.api = api;
 module.exports = expressPermit;
 
+module.exports._wrapper = StoreWrapper;
+module.exports.Store = require('./store');
+module.exports.MemoryPermitStore = require('./memory');
+module.exports.api = require('./api');
+module.exports.error = require('./errors');
+
+module.exports.tag = tags.initTag;
+module.exports.check = tags.check;
+
+/**
+ * Configure express-permit middleware for handling and retrieving permissions.
+ * Provide a permit store and a username function.
+ * @example
+ * app.use(permissions({
+ *  store: new permissions.MemoryStore(),
+ *  username: req => req.session.username
+ * }));
+ * @param {Object} [options] Properties `store` and `username` are required.
+ * @param {Object} [options.store] A permit store such as MemoryStore.
+ * @param {Function} [options.username]
+ * A function that returns the username (provided with req argument).
+ * Example: `req => req.session.username`
+ * @param {Object} [options.defaultPermit]
+ * The default permit to assign 'new' users. Defaults to:
+ * `{ permissions: {}, groups: ['default'] }`
+ * @See permit for help building custom defaults.
+ */
 function expressPermit(options) {
   if (typeof options.username !== 'function') {
     throw new TypeError(
@@ -24,35 +39,38 @@ function expressPermit(options) {
     );
   }
 
+  // Wrap the store for validation.
   var store = new StoreWrapper(options.store);
 
+  // Return middleware for Express to execute on each request.
   return function (req, res, next) {
+
     res.locals.permitAPI = {};
 
-    res.locals.permitAPI.NotFoundError = options.store.NotFoundError;
-    res.locals.permitAPI.Conflict = options.store.Conflict;
-
-    res.locals.permitAPI.PermissionsError = tags.PermissionsError;
-    res.locals.permitAPI.ValidationError = validation.ValidationError;
-
+    // Add the store to req for use in another middleware
     req.permitStore = store;
 
-    if (!options.username(req)) {
+    // Execute the supplied username function to retrieve the username.
+    var username = options.username(req);
+
+    // If the user is not logged on, `next();` without adding permissions.
+    if (!username) {
       return next();
     }
 
-    var username = options.username(req);
-    store.read({ username: username }, function (err, user) {
+    // Attempt to retrieve the user's permit
+    store.rsop({ username: username }, function (err, permit) {
 
-      // No permissions found for this user
+      // If no permissions are found for this user...
       if (err instanceof options.store.NotFoundError) {
 
-        // Build defaults and save
+        // then build defaults
         var defaultPermit = options.defaultPermit || {
           permissions: {},
           groups: ['default'],
         };
 
+        // and create the user.
         store.create(
           { username: username, permit: defaultPermit },
           function (err) {
@@ -61,99 +79,19 @@ function expressPermit(options) {
             return next();
           }
         );
-        req.permits = defaultPermit;
+
+        // Add the permits to the new user's request.
+        res.locals.permit = defaultPermit;
+
       } else if (err) {
         return next(err);
       } else {
-        req.permits = compilePermissions(user);
+
+        // Otherwise, add the user to res.locals.permit
+        res.locals.permit = permit;
         return next();
       }
     });
   };
-}
-
-function compilePermissions(user) {
-  let permissions = clone(user.permissions);
-  if (!user.groups) {return permissions;}
-
-  // This smells funny...
-  for (var i = 0; i < user.groups.length; i++) {
-    let group = user.groups[i];
-
-    // If the user part of the admin group, skip everything and give them admin
-    if (group === 'admin') {
-      permissions = 'admin';
-      break;
-    }
-
-    for (let suite in group) {
-      if (permissions[suite] === 'admin') {continue;}
-
-      if (group[suite] === 'admin') {
-        permissions[suite] = 'admin';
-        continue;
-      }
-
-      if (!permissions[suite]) {permissions[suite] = {};}
-
-      for (let action in group[suite]) {
-
-        if (action === 'admin') {
-
-          // If user is admin of suite, give admin and continue to next suite
-          permissions[suite] = 'admin';
-          continue;
-        }
-
-        if (permissions[suite][action] !== false) {
-          permissions[suite][action] = group[suite][action];
-        }
-      }
-    }
-  }
-
-  return permissions;
-}
-
-function scrapePermissions(node, map) {
-  // Check if the node we're looking at is a permissions object
-  if (!node || !node.permissions) {return;}
-
-  //Iterate over the permissions Map
-  node.permissions.forEach(function (actions, suite) {
-
-    // If the map doesn't currently have that suite, add it
-    if (!map.has(suite)) {
-      map.set(suite, actions);
-    } else {
-      // If it does have the suite, combine the sets
-      var set = map.get(suite);
-      set = new Set([...set, actions]);
-    }
-  });
-}
-
-function listSuites(req, res, next) {
-  var map = new Map();
-
-  scrapePermissions(req.app, map);
-
-  traverse(req.app._router.stack).forEach(function (node) {
-    scrapePermissions(node, map);
-  });
-
-  var permissionSet = {};
-
-  map.forEach(function (set, key) {
-
-    if (!permissionSet[key]) {
-      permissionSet[key] = [];
-    }
-
-    permissionSet[key] = permissionSet[key].concat(Array.from(set));
-  });
-
-  res.locals.permissionSet = permissionSet;
-  next();
 }
 

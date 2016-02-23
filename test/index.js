@@ -26,7 +26,7 @@ describe('Example usage', function () {
     });
   });
 
-  it('should allow awesomeUser access to amusement & deny boredeom',
+  it('should handle explicit suite and root based allows',
     function (done) {
     test('awesomeUser', [
       (a, cb) => {a.get('/ticket-booth').expect(200, cb);},
@@ -45,7 +45,7 @@ describe('Example usage', function () {
     });
   });
 
-  it('should allow awesomeUser access based on group',
+  it('should allow access via group',
     function (done) {
     test('awesomeUser', [
       (a, cb) => {a.get('/park/rides').expect(200, cb);},
@@ -58,7 +58,7 @@ describe('Example usage', function () {
     });
   });
 
-  it('should allow terribleUser access to bored & deny amusement',
+  it('should differentiate between users (sanity check)',
     function (done) {
     test('terribleUser', [
       (a, cb) => {a.get('/ticket-booth').expect(200, cb);},
@@ -81,7 +81,7 @@ describe('Example usage', function () {
     });
   });
 
-  it('should allow the proprietor access to everything',
+  it('should allow the owner access to everything',
     function (done) {
     test('proprietor', [
       (a, cb) => {a.get('/ticket-booth').expect(200, cb);},
@@ -104,7 +104,7 @@ describe('Example usage', function () {
     });
   });
 
-  it('should allow the employee access to everything except look-bored',
+  it('should handle an \'all\' permission',
     function (done) {
     test('employee', [
       (a, cb) => {a.get('/ticket-booth').expect(200, cb);},
@@ -127,7 +127,7 @@ describe('Example usage', function () {
     });
   });
 
-  it('should deny bankruptUser access to the park',
+  it('should override via blocking',
     function (done) {
     test('bankruptUser', [
       (a, cb) => {a.get('/ticket-booth').expect(403, cb);},
@@ -158,11 +158,11 @@ describe('Example usage', function () {
         'go-on-rides',
         'eat-popcorn',
       ],
+      moarAmusement: [
+        'play-games',
+      ],
       boring: [
         'be-bored',
-      ],
-      moarBoring: [
-        'be-boring',
       ],
     }, done);
   });

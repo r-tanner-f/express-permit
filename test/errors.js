@@ -8,8 +8,8 @@ chai.use(dirtyChai);
 var async = require('async');
 
 var expressPermit = require('../');
-var ValidationError = require('../src/validation').ValidationError;
-var StoreWrapper = require('../src/store').wrapper;
+var BadRequest = require('../src').error.BadRequest;
+var StoreWrapper = require('../src/wrapper');
 var tags = require('../src/tags');
 var validation = require('../src/validation');
 var validators = validation.validators;
@@ -26,7 +26,7 @@ describe('Error handling:', function () {
 
   describe('Validation', function () {
     it('Error should pass single messages through', function () {
-      var err = new ValidationError('just the one message!');
+      var err = new BadRequest('just the one message!');
       expect(err.toString()).to.equal(
         'ValidationError -- just the one message!'
       );
@@ -58,7 +58,7 @@ describe('Error handling:', function () {
       );
 
       expect(validators.permissions({ bad: 'whoops' })).to.deep.equal(
-        ['Suites must be objects. Got string']
+        ['Suites must be objects, or the string \'all\'. Got a string.']
       );
     });
 
@@ -86,7 +86,8 @@ describe('Error handling:', function () {
         store: {
           NotFoundError: function () {},
 
-          read: function (u, cb) {
+          state: 'connected',
+          rsop: function (u, cb) {
             cb('Oh noes!');
           },
         },
@@ -137,7 +138,8 @@ describe('Error handling:', function () {
   //
   // Begin memory ==============================================================
   describe('In memory permit store', function () {
-    var memory = new expressPermit.InMemoryPermits(
+    var MemoryPermitStore = expressPermit.MemoryPermitStore(expressPermit);
+    var memory = new MemoryPermitStore(
       {
         someUser: {
           permissions: {},
@@ -267,19 +269,40 @@ describe('Error handling:', function () {
 
   // Begin StoreWrapper ========================================================
   describe('StoreWrapper', function () {
-    var store = new StoreWrapper({
+    var MemoryPermitStore = expressPermit.MemoryPermitStore(expressPermit);
+    var store = new StoreWrapper(new MemoryPermitStore());
 
+    it('should defer ops until store is connected', function (done) {
+      this.timeout(0);
+      var DeferedMemoryStore = expressPermit.MemoryPermitStore(expressPermit);
+      var dcdStore = new StoreWrapper(new DeferedMemoryStore(
+        {
+          someUser: 'owner',
+        }
+      ));
+      dcdStore.store.changeState('disconnected');
+
+      dcdStore.readAll(function (err, result) {
+        expect(result).to.deep.equal({ someUser: 'owner' });
+        done();
+      });
+
+      setTimeout(function () {
+        dcdStore.store.changeState('connected');
+      }, 100);
     });
 
     it('should throw when no callback is supplied', function () {
-      expect(store.create).to.throw(Error, /Callback is required/);
+      var fn = function () {store.create();};
+
+      expect(fn).to.throw(Error, /Callback is required/);
     });
 
     it('should catch errors and return them in callback', function () {
       store.read({ username: 123 }, function (err) {
-        expect(err).to.be.an.instanceof(ValidationError);
+        expect(err).to.be.an.instanceof(BadRequest);
         expect(err).to.deep.equal({
-          message: 'Username must be a string. Got number: 123',
+          message: 'Username must be a string. Got a number: 123.',
         });
       });
     });

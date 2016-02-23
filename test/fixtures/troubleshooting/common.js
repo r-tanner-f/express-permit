@@ -2,7 +2,7 @@
 
 module.exports = function (router, users) {
   var permissions = require('../../../src/index.js');
-  var InMemoryPermits = require('../../../src/index.js').InMemoryPermits;
+  var MemoryPermitStore = permissions.MemoryPermitStore(permissions);
 
   var Express = require('express');
 
@@ -18,7 +18,7 @@ module.exports = function (router, users) {
 
   app.use(permissions({
     //store: new MongoPermits(options)
-    store: new InMemoryPermits(users),
+    store: new MemoryPermitStore(users),
     username: req => req.session.username,
   }));
 
@@ -36,7 +36,7 @@ module.exports = function (router, users) {
 
   // Error handler
   app.use(function (err, req, res, next) { //jshint ignore:line
-    if (err instanceof permissions.error) {
+    if (err instanceof permissions.error.Forbidden) {
       return res.status(403).send('Go away!!');
     }
 

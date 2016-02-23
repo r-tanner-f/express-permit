@@ -1,40 +1,63 @@
 'use strict';
 
-var flatten = require('lodash.flattendeep');
-var descriptors = require('./descriptors');
+const flatten = require('lodash.flattendeep');
+const BadRequest = require('./errors').BadRequest;
 
-class ValidationError {
-  constructor(err) {
-    if (!Array.isArray(err)) {
-      this.message = err;
-      return;
-    }
+// Parameters required for operations
+const descriptors = {
 
-    // If passed an array, add it to the details
-    err = flatten(err);
+  // Users =====================================================================
+  create: ['username', 'permit'],
 
-    // Remove all falsey values from array
-    err = err.filter(function (e) {
-      return Boolean(e);
-    });
+  read: ['username'],
 
-    if (err.length === 1) {
-      this.message = err[0];
-      return;
-    }
+  rsop: ['username'],
 
-    this.message = 'Multiple validation errors occured. See err.details.';
-    this.details = err;
-  }
+  update: ['username', 'permit'],
 
-  toString() {
-    return 'ValidationError -- ' + (this.details || this.message);
-  }
-}
+  destroy: ['username'],
 
+  setAdmin: ['username'],
+
+  setOwner: ['username'],
+
+  // Permission Operations -----------------------------------------------------
+  addPermission: ['username', 'permission', 'suite'],
+
+  removePermission: ['username', 'permission', 'suite'],
+
+  blockPermission: ['username', 'permission', 'suite'],
+
+  // Group Operations ----------------------------------------------------------
+  addGroup: ['username', 'group'],
+
+  removeGroup: ['username', 'group'],
+
+  // Groups:===================================================================
+
+  // CRUD ----------------------------------------------------------------------
+
+  createGroup: ['group', 'permissions'],
+
+  readGroup: ['group'],
+
+  updateGroup: ['group', 'permissions'],
+
+  destroyGroup: ['group'],
+
+  // Permission Operations -----------------------------------------------------
+
+  addGroupPermission: ['group', 'permission', 'suite'],
+
+  removeGroupPermission: ['group', 'permission', 'suite'],
+
+  blockGroupPermission: ['group', 'permission', 'suite'],
+};
+
+// Validators for each parameter
 const validators = {
   username: u => typeof u === 'string' ? null :
-    `Username must be a string. Got ${typeof u}: ${u}`,
+    `Username must be a string. Got a ${typeof u}: ${u}.`,
 
   permission: p => typeof p === 'string' ? null :
     `Permission must be a string. Got ${p}`,
@@ -54,8 +77,9 @@ const validators = {
     }
 
     for (var suite in p) {
-      if (typeof p[suite] !== 'object') {
-        err.push(`Suites must be objects. Got ${typeof p[suite]}`);
+      if (typeof p[suite] !== 'object' && p[suite] !== 'all') {
+        err.push(`Suites must be objects, or the string 'all'. ` +
+                 `Got a ${typeof p[suite]}.`);
         return err;
       }
 
@@ -75,14 +99,11 @@ const validators = {
 
     if (err.length > 0) { return err; }
 
-    // We will silently fix root for simplicity's sake
-    if (!p.root) {
-      p.root = {};
-    }
   },
 
-  permissionKeyValue: p => typeof p === 'boolean' || p === 'admin' ? null :
-    `Permission key/value pair must be boolean or 'admin'. Got ${p}`,
+  permissionKeyValue: p =>
+    typeof p === 'boolean' ? null :
+    `Permission key/value pair must be boolean. Got ${p}`,
 
   permit: function (p) {
     var err = [];
@@ -113,24 +134,17 @@ const validators = {
   },
 };
 
+// Validate an operation.
 function validateOp(op, args) {
-  // Get our list of parameters from the op descriptors
+  // Get our list of parameters from the op descriptors.
   var params = descriptors[op];
 
   var err = [];
 
   // Iterate over each param we need
   params.forEach(function (param) {
-    var required = true;
-
-    // If the param is annotated with a ? at the end, the param is optional
-    if (param[param.length - 1] === '?') {
-      param = param.slice(0, -1);
-      required = false;
-    }
-
-    // If we don't have the param and it's required, create an error string
-    if (!args[param] && required) {
+    // If we don't have the required param then create an error string.
+    if (!args[param]) {
       err.push(`Missing required parameter: ${param}`);
     } else {
       err.push(validators[param](args[param]));
@@ -138,19 +152,19 @@ function validateOp(op, args) {
 
   });
 
+  // Certain validators return an array; flatten these.
   err = flatten(err);
 
-  // Remove all falsey values from array -- validators return null
+  // Remove all falsey values from array -- validators return null if no err.
   err = err.filter(function (e) {
     return Boolean(e);
   });
 
-  // If we have any errs, wrap them in a ValidationError and return
+  // If we have any errs, wrap them in a ValidationError and return.
   if (err.length) {
-    return new ValidationError(err);
+    return new BadRequest(err);
   }
 }
 
-exports.ValidationError = ValidationError;
 exports.validators = validators;
 exports.validateOp = validateOp;

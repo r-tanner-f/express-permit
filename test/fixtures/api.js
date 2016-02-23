@@ -9,7 +9,8 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
 var permissions = require('../../src/index.js');
-var check = permissions.check; //jshint ignore:line
+var MemoryPermitStore = permissions.MemoryPermitStore(permissions);
+
 var api = permissions.api;
 
 app.use(session({
@@ -20,6 +21,13 @@ app.use(session({
 
 var users = {
   //jscs: disable disallowSpaceAfterObjectKeys
+  rsopUser: {
+    permissions: {
+      'block-test': { 'block-me': true },
+      'group-test': { 'some-perm': true },
+    },
+    groups: ['rsop-me'],
+  },
   someUser: {
     permissions: {
       root: { 'delete-me': true, 'block-me': true },
@@ -36,6 +44,8 @@ var users = {
   },
   updatableUser: {},
   deletableUser: {},
+  nonAdmin: {},
+  nonOwner: {},
 };
 
 var groups = {
@@ -43,12 +53,20 @@ var groups = {
   'remove-me': {},
   'update-me': {},
   'read-me': { root: { foo: 'bar' } },
+  'rsop-me': {
+    'block-test': {
+      'block-me': false,
+    },
+    'group-test': {
+      'add-me': true,
+    },
+  },
   'delete-me': {},
   'op-me': { root: { 'remove-me': true } },
 };
 
 app.use(permissions({
-  store: new permissions.InMemoryPermits(users, groups),
+  store: new MemoryPermitStore(users, groups),
   username: req => req.session.username,
 }));
 
@@ -61,6 +79,16 @@ function ok(req, res) {
   res.sendStatus(200);
 }
 
+// readAll =====================================================================
+
+app.get('/users', api.readAll, function (req, res) {
+  res.send(res.locals.permitAPI.result);
+});
+
+app.get('/groups', api.readAllGroups, function (req, res) {
+  res.send(res.locals.permitAPI.result);
+});
+
 // Users =======================================================================
 
 app.post('/user/:username', api.create, ok);
@@ -69,8 +97,15 @@ app.get('/user/:username', api.read, function (req, res) {
   res.send(res.locals.permitAPI.result);
 });
 
+app.get('/user/rsop/:username', api.rsop, function (req, res) {
+  res.send(res.locals.permitAPI.result);
+});
+
 app.put('/user/:username', api.update, ok);
 app.delete('/user/:username', api.destroy, ok);
+
+app.get('/setAdmin/:username', api.setAdmin, ok);
+app.get('/setOwner/:username', api.setOwner, ok);
 
 // Permission Operations -------------------------------------------------------
 
@@ -117,15 +152,15 @@ app.get(
 
 // Error handler
 app.use(function (err, req, res, next) { //jshint ignore:line
-  if (err instanceof res.locals.permitAPI.ValidationError) {
+  if (err instanceof permissions.error.BadRequest) {
     return res.status(400).send(err.toString());
   }
 
-  if (err instanceof res.locals.permitAPI.NotFoundError) {
+  if (err instanceof permissions.error.NotFound) {
     return res.status(404).send(err.toString());
   }
 
-  if (err instanceof permissions.error) {
+  if (err instanceof permissions.error.Forbidden) {
     return res.status(403).send('Go away!!');
   }
 

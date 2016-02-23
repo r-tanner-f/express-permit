@@ -23,6 +23,7 @@
   "homepage": "https://github.com/r-tanner-f/express-permit#readme",
   "devDependencies": {
     "async": "^1.5.2",
+    "blanket": "^1.1.9",
     "body-parser": "^1.14.2",
     "chai": "^3.4.1",
     "dirty-chai": "^1.2.2",
@@ -36,5 +37,13 @@
     "lodash.clonedeep": "^4.0.4",
     "lodash.flattendeep": "^4.0.0",
     "traverse": "^0.6.6"
+  },
+  "config": {
+    "blanket": {
+      "data-cover-ecmaVersion": 6,
+      "pattern": [
+        "src"
+      ]
+    }
   }
 }
