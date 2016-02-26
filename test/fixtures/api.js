@@ -82,11 +82,11 @@ function ok(req, res) {
 // readAll =====================================================================
 
 app.get('/users', api.readAll, function (req, res) {
-  res.send(res.locals.permitAPI.result);
+  res.send(res.locals.permitAPI.users);
 });
 
 app.get('/groups', api.readAllGroups, function (req, res) {
-  res.send(res.locals.permitAPI.result);
+  res.send(res.locals.permitAPI.groups);
 });
 
 // Users =======================================================================

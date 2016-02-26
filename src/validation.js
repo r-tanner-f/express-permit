@@ -7,13 +7,13 @@ const BadRequest = require('./errors').BadRequest;
 const descriptors = {
 
   // Users =====================================================================
-  create: ['username', 'permit'],
+  create: ['username', 'user'],
 
   read: ['username'],
 
   rsop: ['username'],
 
-  update: ['username', 'permit'],
+  update: ['username', 'user'],
 
   destroy: ['username'],
 
@@ -105,7 +105,7 @@ const validators = {
     typeof p === 'boolean' ? null :
     `Permission key/value pair must be boolean. Got ${p}`,
 
-  permit: function (p) {
+  user: function (p) {
     var err = [];
     if (!p) {
       err.push(`Missing permit: Got ${p}.`);
@@ -136,6 +136,7 @@ const validators = {
 
 // Validate an operation.
 function validateOp(op, args) {
+
   // Get our list of parameters from the op descriptors.
   var params = descriptors[op];
 
@@ -147,6 +148,7 @@ function validateOp(op, args) {
     if (!args[param]) {
       err.push(`Missing required parameter: ${param}`);
     } else {
+      debugger;
       err.push(validators[param](args[param]));
     }
 

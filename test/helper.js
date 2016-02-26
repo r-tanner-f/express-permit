@@ -11,7 +11,7 @@ exports.testTree = function testTree(agent, expectedTree, done) {
     .get('/tree')
     .expect(200)
     .end(function (err, res) {
-      if (err) throw err;
+      expect(err).to.not.exist();
       expect(res.body).to.deep.equal(expectedTree);
       done();
     });

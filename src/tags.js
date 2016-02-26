@@ -77,23 +77,59 @@ function check(action, suite) {
     // If for some reason there is no res.locals.permit,
     // this will prevent goofy errors from happening.
     if (res.locals.permit) {
-      if (suite === 'root' && res.locals.permit[action] === true) {
-        // TODO for srs this needs to be implemented =\
-        return next();
-      }
+      var permit = res.locals.permit;
 
-      if (
-        res.locals.permit === 'owner' ||
-        res.locals.permit === 'admin'
-      ) {return next();} else if (
-        res.locals.permit[suite]                     &&
-        res.locals.permit[suite][action] === true    ||
-        res.locals.permit[suite]         === 'all'
+      // If owner or admin, permit any action
+      if (permit === 'owner' || permit === 'admin') {
+        return next();
+
+      /**
+       * If action is explicitly permitted: continue.
+       * @example
+       * var permit = {
+       *   'amusement-park': {
+       *     'go-on-rides': true
+       *   }
+       * }
+       */
+      } else if (permit[suite] && permit[suite][action] === true) {
+        return next();
+
+      /**
+       * If user has 'all' actions AND permission isn't explicitly forbidden
+       * @example
+       * // Permitted
+       * var permit = {
+       *   'amusement-park': {
+       *     all: true,
+       *   }
+       * }
+       * @example
+       * // Not permitted
+       * var permit = {
+       *   'amusement-park': {
+       *     all: true,
+       *     'go-on-rides': false
+       *   }
+       * }
+       */
+      } else if (
+
+        // Suite exists
+        permit[suite]                   &&
+
+        // All is true
+        permit[suite].all     === true  &&
+
+        // The permission is NOT explicitly blocked
+        permit[suite][action] !== false
       ) {
         return next();
       }
     }
 
+    // If no next() is trigged, pass a Forbidden error the handler
+    // "Implicit-deny" in a way
     var err = new Forbidden(res, action, suite);
     next(err);
   };

@@ -29,6 +29,7 @@
     "dirty-chai": "^1.2.2",
     "express": "^4.13.4",
     "express-session": "^1.13.0",
+    "ink-docstrap": "^1.1.2",
     "mocha": "^2.4.5",
     "rewire": "^2.5.1",
     "supertest": "^1.1.0"

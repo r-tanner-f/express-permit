@@ -1,9 +1,14 @@
+/**
+ * Express middleware for fine-grained permissions
+ * @module express-permit
+ */
+
 'use strict';
 
 var tags = require('./tags');
 var StoreWrapper = require('./wrapper');
 
-module.exports = expressPermit;
+module.exports = permissions;
 
 module.exports._wrapper = StoreWrapper;
 module.exports.Store = require('./store');
@@ -18,21 +23,26 @@ module.exports.check = tags.check;
  * Configure express-permit middleware for handling and retrieving permissions.
  * Provide a permit store and a username function.
  * @example
+ * var permissions = require('express-permit');
+ *
  * app.use(permissions({
- *  store: new permissions.MemoryStore(),
+ *  store: MemoryPermitStore(),
  *  username: req => req.session.username
  * }));
- * @param {Object} [options] Properties `store` and `username` are required.
- * @param {Object} [options.store] A permit store such as MemoryStore.
- * @param {Function} [options.username]
+ * @param {Object} options
+ * Properties <code>store</code> and <code>username</code> are required.
+ * @param {Object} options.store A permit store such as MemoryStore.
+ * @param {Function} options.username
  * A function that returns the username (provided with req argument).
- * Example: `req => req.session.username`
+ * Example: <code>req => req.session.username</code>
  * @param {Object} [options.defaultPermit]
  * The default permit to assign 'new' users. Defaults to:
- * `{ permissions: {}, groups: ['default'] }`
- * @See permit for help building custom defaults.
+ * <code>{ permissions: {}, groups: ['default'] }</code>
+ * @return middleware
+ * @static
+ * @public
  */
-function expressPermit(options) {
+function permissions(options) {
   if (typeof options.username !== 'function') {
     throw new TypeError(
       `express-permit requires a username function. Got ${options.username}.`
@@ -72,7 +82,7 @@ function expressPermit(options) {
 
         // and create the user.
         store.create(
-          { username: username, permit: defaultPermit },
+          { username: username, user: defaultPermit },
           function (err) {
             if (err) {return next(err);}
 

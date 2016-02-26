@@ -11,7 +11,7 @@ router.get('/', permit('haveFun'), function (req, res) {
 });
 
 router.get('/tree', list, function (req, res) {
-  res.json(res.locals.permissionSet);
+  res.json(res.locals.permitAPI.list);
 });
 
 var app = require('./common')(router, {

@@ -8,12 +8,12 @@ var validate = require('./validation').validateOp;
  * @private
  */
 function compilePermissions(user) {
-  var permissions = user.permissions;
+  var permit = user.permissions;
 
   // If the user is no groups, is an admin, or is owner,
   // simply return the permissions.
-  if (!user.groups || permissions === 'admin' || permissions === 'owner') {
-    return permissions;
+  if (!user.groups || permit === 'admin' || permit === 'owner') {
+    return permit;
   }
 
   // Otherwise, loop through
@@ -22,29 +22,27 @@ function compilePermissions(user) {
 
     for (let suite in group) {
 
+      // If user has no permissions in suite, initialize suite
+      if (!permit[suite]) {permit[suite] = {};}
+
       // If user already has 'all' permissions in suite or the group sets 'all'
       // Set permissions in suite to 'all' and continue
-      if (permissions[suite] === 'all' || group[suite] === 'all') {
-        permissions[suite] = 'all';
-
-        // Continuing means that 'all' > false... Not sure if that's ok
+      if (permit[suite].all === true || group[suite] === 'all') {
+        permit[suite].all = true;
         continue;
       }
-
-      // If user has no permissions in suite, initialize suite
-      if (!permissions[suite]) {permissions[suite] = {};}
 
       for (let action in group[suite]) {
 
         // If the current action is not false, set it to the group's value
-        if (permissions[suite][action] !== false) {
-          permissions[suite][action] = group[suite][action];
+        if (permit[suite][action] !== false) {
+          permit[suite][action] = group[suite][action];
         }
       }
     }
   }
 
-  return permissions;
+  return permit;
 }
 
 function defaultSuite(args) {
@@ -112,7 +110,7 @@ class StoreWrapper {
     this._validateAndRun(
       'create',
       args,
-      () => this.store.create(args.username, args.permit, callback),
+      () => this.store.create(args.username, args.user, callback),
       callback
     );
   }
@@ -146,7 +144,7 @@ class StoreWrapper {
     this._validateAndRun(
       'update',
       args,
-      () => this.store.update(args.username, args.permit, callback),
+      () => this.store.update(args.username, args.user, callback),
       callback
     );
   }

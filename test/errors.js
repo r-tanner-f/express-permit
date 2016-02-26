@@ -108,6 +108,7 @@ describe('Error handling:', function () {
       'should next an Error if the underlying store returns an error',
       function (done) {
         var req = {
+          query: {},
           params: {
             username: 'foo',
           },

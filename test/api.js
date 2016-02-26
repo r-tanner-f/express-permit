@@ -73,8 +73,8 @@ describe('API', function () {
   // Users =====================================================================
 
   it('should create a user', function (done) {
-    var user = {
-      permit: {
+    var body = {
+      user: {
         permissions: {
           root: { 'enter-park': true },
         },
@@ -84,10 +84,10 @@ describe('API', function () {
 
     agent
     .post('/user/someGuy')
-    .send(user)
+    .send(body)
     .expect(200)
     .end(ok(
-      () => expect(users.someGuy).to.deep.equal(user.permit),
+      () => expect(users.someGuy).to.deep.equal(body.user),
       done
     ));
   });
@@ -119,7 +119,7 @@ describe('API', function () {
 
   it('should update a user', function (done) {
     var update = {
-      permit: { permissions: { root: { updated: true } }, groups: [], },
+      user: { permissions: { root: { updated: true } }, groups: [], },
     };
     agent
     .put('/user/updatableUser')
@@ -129,7 +129,7 @@ describe('API', function () {
       expect(result.err).to.not.exist();
       expect(err).to.not.exist();
 
-      expect(users.updatableUser).to.deep.equal(update.permit);
+      expect(users.updatableUser).to.deep.equal(update.user);
       done();
     });
   });
