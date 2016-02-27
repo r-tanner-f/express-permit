@@ -1,11 +1,19 @@
+'use strict';
+
+/*
+ *     _    ____ ___
+ *    / \  |  _ \_ _|
+ *   / _ \ | |_) | |
+ *  / ___ \|  __/| |
+ * /_/   \_\_|  |___|
+ */
+
+var traverse = require('traverse');
+
 /**
  * API module for use as Express middleware
  * @module express-permit/api
  */
-
-'use strict';
-
-var traverse = require('traverse');
 
 /**
  * Generic operation running function. Used by all API middleware.
@@ -215,7 +223,7 @@ exports.readAllGroups = function (req, res, next) {
  * @param {Object} req.body∥query∥param
  * @param {User}   req.body∥query∥param.user See <code>User</code> typedef
  * @param {String} req.body∥query∥param.username
- * @param {Object} res 
+ * @param {Object} res
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @param {Function} next
  * @example

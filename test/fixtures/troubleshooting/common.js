@@ -1,5 +1,13 @@
 'use strict';
 
+/*
+ *  ____
+ * / ___|___  _ __ ___  _ __ ___   ___  _ __
+ *| |   / _ \| '_ ` _ \| '_ ` _ \ / _ \| '_ \
+ *| |__| (_) | | | | | | | | | | | (_) | | | |
+ * \____\___/|_| |_| |_|_| |_| |_|\___/|_| |_|
+ */
+
 module.exports = function (router, users) {
   var permissions = require('../../../src/index.js');
   var MemoryPermitStore = permissions.MemoryPermitStore(permissions);

@@ -1,4 +1,13 @@
 'use strict';
+
+/*
+ *  ____        _ _
+ * / ___| _   _(_) |_ ___
+ * \___ \| | | | | __/ _ \
+ *  ___) | |_| | | ||  __/
+ * |____/ \__,_|_|\__\___|
+ */
+
 var Express = require('express');
 var router = Express.Router();
 

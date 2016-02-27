@@ -1,4 +1,13 @@
 'use strict';
+
+/*
+ *  ____  _
+ * / ___|| |_ ___  _ __ ___
+ * \___ \| __/ _ \| '__/ _ \
+ *  ___) | || (_) | | |  __/
+ * |____/ \__\___/|_|  \___|
+ */
+
 var errors = require('./errors');
 var EventEmitter = require('events').EventEmitter;
 

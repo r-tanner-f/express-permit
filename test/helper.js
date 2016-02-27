@@ -1,5 +1,14 @@
 'use strict';
 
+/*
+ * _   _      _
+ *| | | | ___| |_ __   ___ _ __ ___
+ *| |_| |/ _ \ | '_ \ / _ \ '__/ __|
+ *|  _  |  __/ | |_) |  __/ |  \__ \
+ *|_| |_|\___|_| .__/ \___|_|  |___/
+ *             |_|
+ */
+
 var chai           = require('chai');
 var dirtyChai      = require('dirty-chai');
 var expect         = chai.expect;

@@ -1,23 +1,32 @@
 'use strict';
 
+/*
+ * _____
+ *|_   _|_ _  __ _ ___
+ *  | |/ _` |/ _` / __|
+ *  | | (_| | (_| \__ \
+ *  |_|\__,_|\__, |___/
+ *           |___/
+ */
+
 var Forbidden = require('./errors').Forbidden;
 
 class Tagger {
   constructor() {
 
     // Three possible inputs
-    // A suite:
+    // Suite:
     if (typeof arguments[0] === 'string') {
       this.defaultSuite = arguments[0];
     }
 
-    // A router:
+    // Router:
     else if (typeof arguments[0] === 'function' && !arguments[1]) {
       this.defaultSuite = 'root';
       this.router = arguments[0];
     }
 
-    // A router and a suite:
+    // Router and Suite:
     else if (
       typeof arguments[0] === 'function' &&
       typeof arguments[1] === 'string'

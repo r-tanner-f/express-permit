@@ -1,13 +1,20 @@
-/**
- * Express middleware for fine-grained permissions
- * @module express-permit
- */
-
 'use strict';
+
+/*
+ *  _____  ___ __  _ __ ___  ___ ___       _ __   ___ _ __ _ __ ___ (_) |_
+ * / _ \ \/ / '_ \| '__/ _ \/ __/ __|_____| '_ \ / _ \ '__| '_ ` _ \| | __|
+ *|  __/>  <| |_) | | |  __/\__ \__ \_____| |_) |  __/ |  | | | | | | | |_
+ * \___/_/\_\ .__/|_|  \___||___/___/     | .__/ \___|_|  |_| |_| |_|_|\__|
+ *          |_|                           |_|
+ */
 
 var tags = require('./tags');
 var StoreWrapper = require('./wrapper');
 
+/**
+ * Express middleware for fine-grained permissions
+ * @module express-permit
+ */
 module.exports = permissions;
 
 module.exports._wrapper = StoreWrapper;

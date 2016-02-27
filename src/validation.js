@@ -1,5 +1,13 @@
 'use strict';
 
+/*
+ *__     __    _ _     _       _   _
+ *\ \   / /_ _| (_) __| | __ _| |_(_) ___  _ __
+ * \ \ / / _` | | |/ _` |/ _` | __| |/ _ \| '_ \
+ *  \ V / (_| | | | (_| | (_| | |_| | (_) | | | |
+ *   \_/ \__,_|_|_|\__,_|\__,_|\__|_|\___/|_| |_|
+ */
+
 const flatten = require('lodash.flattendeep');
 const BadRequest = require('./errors').BadRequest;
 
