@@ -328,7 +328,8 @@ exports.rsop = runOp('rsop', ['username'], 'user');
  * @param {Object} req.body∥query∥param
  * @param {String} req.body∥query∥param.username
  * @param {Object} req.body∥query∥param.user See <code>User</code> typedef.
- * @param {Object} res Populates <code>res.locals.permitAPI</code>
+ * @param {Object} res
+ * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @param {Function} next
  * @example
  * app.put('/user/:username', permissions.api.update, function(req, res, next) {
@@ -349,7 +350,7 @@ exports.update = runOp('update', ['username', 'user']);
  * @param {Function} next
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @example
- * app.destroy('/user/:username', permissions.api.delete, function(req, res, next) {
+ * app.delete('/user/:username', permissions.api.delete, function(req, res, next) {
  *  res.render('/confirmation');
  * });
  * @example
@@ -370,7 +371,7 @@ exports.destroy = runOp('destroy', ['username']);
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @param {Function} next
  * @example
- * app.get('/addPermission/:username', permissions.api.addPermission, function(req, res, next) {
+ * app.get('/user/:username/addPermission/:suite?/:permission', permissions.api.addPermission, function(req, res, next) {
  *   res.render('/confirmation');
  *  });
  * @example
@@ -389,12 +390,11 @@ exports.addPermission = runOp(
  * @param {String} req.body∥query∥param.username
  * @param {String} [req.body∥query∥param.suite]
  * @param {String} req.body∥query∥param.permission
- * @param {String} req
  * @param {Object} res
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @param {Function} next
  * @example
- * app.get('/removePermission/:username', permissions.api.removePermission, function(req, res, next) {
+ * app.get('/user/:username/removePermission/:suite?/:permission', permissions.api.removePermission, function(req, res, next) {
  *   res.render('/confirmation');
  *  });
  * @example
@@ -418,7 +418,7 @@ exports.removePermission = runOp(
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @param {Function} next
  * @example
- * app.get('/addPermission/:username', permissions.api.addPermission, function(req, res, next) {
+ * app.put('/blockPermission/:username', permissions.api.blockPermission, function(req, res, next) {
  *   res.render('/confirmation');
  *  });
  * @example
@@ -429,34 +429,154 @@ exports.blockPermission = runOp(
   ['username', 'permission', 'suite']
 );
 
+/**
+ * Sets a user's permissions to the string 'admin', granting them access to everything.
+ * Recommended to pair this with an isAdmin or isOwner check.
+ * @function
+ * @param {Object} req
+ * @param {Object} req.body∥query∥param
+ * @param {String} req.body∥query∥param.username
+ * @param {String} req
+ * @param {Object} res
+ * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
+ * @param {Function} next
+ * @example
+ * app.get('/setAdmin/:username', permissions.check.isOwner,p ermissions.api.setAdmin,  function(req, res, next) {
+ *   res.render('/confirmation');
+ *  });
+ * @example
+ * h1 #{permitAPI.username} is now an admin!
+ */
 exports.setAdmin = runOp('setAdmin', ['username']);
 
+/**
+ * Transfer 'owner' to another user. Performs an isOwner check automatically.
+ * @function
+ * @param {Object} req
+ * @param {Object} req.body∥query∥param
+ * @param {String} req.body∥query∥param.username
+ * @param {String} req
+ * @param {Object} res
+ * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
+ * @param {Function} next
+ * @example
+ * app.get('/transferOwner/:username', permissions.api.transferOwner, function(req, res, next) {
+ *   res.render('/confirmation');
+ *  });
+ * @example
+ * h1 #{permitAPI.username} is now the owner!
+ */
 exports.setOwner = runOp('setOwner', ['username']);
 
+/**
+ * Adds a user to a group
+ * @function
+ * @param {Object} req
+ * @param {Object} req.body∥query∥param
+ * @param {String} req.body∥query∥param.username
+ * @param {String} req.body∥query∥param.group
+ * @param {Object} res
+ * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
+ * @param {Function} next
+ * @example
+ * app.get('/addGroup/:username', permissions.api.addGroup, function(req, res, next) {
+ *   res.render('/confirmation');
+ * });
+ * @example
+ *  h1 #{permitAPI.username} is now part of group #{permitAPI.group} !
+ */
 exports.addGroup = runOp('addGroup', ['username', 'group']);
 
+/**
+ * Removes a user from a group
+ * @function
+ * @param {Object} req
+ * @param {Object} req.body∥query∥param
+ * @param {String} req.body∥query∥param.username
+ * @param {String} req.body∥query∥param.group
+ * @param {Object} res
+ * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
+ * @param {Function} next
+ * @example
+ * app.put('/removeGroup/:username', permissions.api.removeGroup, function(req, res, next) {
+ *   res.render('/confirmation');
+ * });
+ * @example
+ *  h1 #{permitAPI.username} is now part of group #{permitAPI.group} !
+ */
 exports.removeGroup = runOp('removeGroup', ['username', 'group']);
 
+/**
+ * Create a group
+ * @function
+ * @param {Object} req
+ * @param {Object} req.body∥query∥param
+ * @param {String} req.body∥query∥param.group
+ * @param {User}   req.body∥query∥param.permissions See <code>Permissions</code> typedef
+ * @param {Object} res
+ * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
+ * @param {Function} next
+ * @example
+ * app.post('/group/:group', permissions.api.createGroup, function(req, res) {
+ *
+ *   // All parameters are dumped to res.locals for confirmation page rendering
+ *   res.locals.permitAPI.permissions === {
+ *      amusement: {
+ *        'go-on-rides': true,
+ *        'eat-popcorn': true
+ *      }
+ *   }
+ *
+ *   res.render('/confirmation');
+ * });
+ * @example
+ * h1 #{permitAPI.group} group created!
+ *
+ * h2 Permissions
+ * code= #{permitAPI.permissions}
+ */
 exports.createGroup = runOp('createGroup', ['group', 'permissions']);
 
+/**
+ * Read a group
+ * @function
+ * @param {Object} req
+ * @param {Object} req.body∥query∥param
+ * @param {String} req.body∥query∥param.group
+ * @param {Object} res Populates <code>res.locals.permitAPI.group</code>
+ * @param {Function} next
+ * @example
+ * app.get('/group/:group', permissions.api.readGroup, function(req, res) {
+ *   res.locals.permitAPI.group === {
+ *     name: 'customers',
+ *     permissions: {
+ *      root: { 'enter-park': true },
+ *      amusement: { 'go-on-rides': true },
+ *     },
+ *   }
+ *   res.render('/user');
+ * });
+ * @example
+ * h1 #{permitAPI.group.name}
+ */
 exports.readGroup = runOp('readGroup', ['group'], 'group');
 
+/**
+ * Update a group
+ * @function
+ * @param {Object} req
+ * @param {Object} req.body∥query∥param
+ * @param {String} req.body∥query∥param.group
+ * @param {Object} req.body∥query∥param.permissions See <code>Permissions</code> typedef.
+ * @param {Object} res Populates <code>res.locals.permitAPI</code>
+ * @param {Function} next
+ * @example
+ * app.put('/user/:username', permissions.api.update, function(req, res, next) {
+ *  res.render('/confirmation');
+ * });
+ * @example
+ * h1 #{permitAPI.username} updated!
+ */
 exports.updateGroup = runOp('updateGroup', ['group', 'permissions']);
 
 exports.destroyGroup = runOp('destroyGroup', ['group']);
-
-exports.addGroupPermission = runOp(
-  'addGroupPermission',
-  ['group', 'permission', 'suite']
-);
-
-exports.removeGroupPermission = runOp(
-  'removeGroupPermission',
-  ['group', 'permission', 'suite']
-);
-
-exports.blockGroupPermission = runOp(
-  'blockGroupPermission',
-  ['group', 'permission', 'suite']
-);
-

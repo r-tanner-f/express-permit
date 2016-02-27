@@ -238,51 +238,6 @@ module.exports = function (expressPermit) {
       delete this.groups[group];
       callback();
     }
-
-  // Permission Operations -----------------------------------------------------
-
-    addGroupPermission(group, permission, suite, callback) {
-      if (!this.groups[group]) {
-        return callback(new this.NotFoundError('Group does not exist'));
-      }
-
-      if (!this.groups[group][suite]) {
-        this.groups[group][suite] = {};
-      }
-
-      this.groups[group][suite][permission] = true;
-      callback();
-    }
-
-    removeGroupPermission(group, permission, suite, callback) {
-      if (!this.groups[group]) {
-        return callback(new this.NotFoundError('Group does not exist'));
-      }
-
-      if (!this.groups[group][suite]) {
-        return callback(new this.NotFoundError('Suite does not exist'));
-      }
-
-      if (!this.groups[group][suite][permission]) {
-        return callback(new this.NotFoundError('Permission does not exist'));
-      }
-
-      delete this.groups[group][suite][permission];
-      callback();
-    }
-
-    blockGroupPermission(group, permission, suite, callback) {
-      if (!this.groups[group]) {
-        return callback(new this.NotFoundError('Group does not exist'));
-      }
-
-      if (!this.groups[group][suite]) {
-        this.groups[group][suite] = {};
-      }
-
-      this.groups[group][suite][permission] = false;
-      callback();
-    }
   }
 
   return MemoryPermitStore;

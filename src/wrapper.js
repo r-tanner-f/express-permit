@@ -290,46 +290,6 @@ class StoreWrapper {
       callback
     );
   }
-
-  // Permission Operations -----------------------------------------------------
-  addGroupPermission(args, callback) {
-    defaultSuite(args);
-
-    this._validateAndRun(
-      'addGroupPermission',
-      args,
-      () => this.store.addGroupPermission(
-        args.group, args.permission, args.suite, callback
-      ),
-      callback
-    );
-  }
-
-  removeGroupPermission(args, callback) {
-    defaultSuite(args);
-
-    this._validateAndRun(
-      'removeGroupPermission',
-      args,
-      () => this.store.removeGroupPermission(
-        args.group, args.permission, args.suite, callback
-      ),
-      callback
-    );
-  }
-
-  blockGroupPermission(args, callback) {
-    defaultSuite(args);
-
-    this._validateAndRun(
-      'blockGroupPermission',
-      args,
-      () => this.store.blockGroupPermission(
-        args.group, args.permission, args.suite, callback
-      ),
-      callback
-    );
-  }
 }
 
 module.exports = StoreWrapper;

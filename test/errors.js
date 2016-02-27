@@ -241,24 +241,6 @@ describe('Error handling:', function () {
             'notfound', undefined, reverse(callback)
           ),
           callback => memory.destroyGroup('notfound', reverse(callback)),
-          callback => memory.addGroupPermission(
-            'notfound', undefined, undefined, reverse(callback)
-          ),
-          callback => memory.removeGroupPermission(
-            'notfound', undefined, undefined, reverse(callback)
-          ),
-          callback => memory.removeGroupPermission(
-            'someGroup', undefined, 'notfoundsuite', reverse(callback)
-          ),
-          callback => memory.removeGroupPermission(
-            'someGroup', 'notfoundpermission', 'someSuite', reverse(callback)
-          ),
-          callback => memory.removeGroupPermission(
-            'notfound', undefined, undefined, reverse(callback)
-          ),
-          callback => memory.blockGroupPermission(
-            'notfound', undefined, undefined, reverse(callback)
-          ),
         ];
 
         async.parallel(tests, function (err, result) {

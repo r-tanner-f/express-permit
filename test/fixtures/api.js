@@ -145,20 +145,6 @@ app.get('/group/:group', api.readGroup, function (req, res) {
 app.put('/group/:group', api.updateGroup, ok);
 app.delete('/group/:group', api.destroyGroup, ok);
 
-// Permission Operations -------------------------------------------------------
-app.get(
-  '/addGroupPermission/:group/:suite?/:permission', api.addGroupPermission, ok
-);
-app.get(
-  '/removeGroupPermission/:group/:suite?/:permission',
-  api.removeGroupPermission, ok
-);
-app.get(
-  '/blockGroupPermission/:group/:suite?/:permission',
-  api.blockGroupPermission,
-  ok
-);
-
 // Error handler
 app.use(function (err, req, res, next) { //jshint ignore:line
   if (err instanceof permissions.error.BadRequest) {
@@ -178,4 +164,3 @@ app.use(function (err, req, res, next) { //jshint ignore:line
 });
 
 module.exports = app;
-

@@ -303,37 +303,5 @@ describe('API', function () {
       done
     ));
   });
-
-  // Permission Operations -----------------------------------------------------
-
-  it('should add a permission to a group', function (done) {
-    agent
-    .get('/addGroupPermission/op-me/suite/add-me')
-    .expect(200)
-    .end(ok(
-      () => expect(groups['op-me'].suite['add-me']).to.be.true(),
-      done
-    ));
-  });
-
-  it('should remove a permission from a group', function (done) {
-    agent
-    .get('/removeGroupPermission/op-me/remove-me')
-    .expect(200)
-    .end(ok(
-      () => expect(groups['op-me'].root['remove-me']).to.not.exist(),
-      done
-    ));
-  });
-
-  it('should block a group from a permission', function (done) {
-    agent
-    .get('/blockGroupPermission/op-me/suite/block-me')
-    .expect(200)
-    .end(ok(
-      () => expect(groups['op-me'].suite['block-me']).to.be.false(),
-      done
-    ));
-  });
 });
 
