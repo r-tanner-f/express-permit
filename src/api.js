@@ -579,4 +579,20 @@ exports.readGroup = runOp('readGroup', ['group'], 'group');
  */
 exports.updateGroup = runOp('updateGroup', ['group', 'permissions']);
 
+/**
+ * Delete a group
+ * @function
+ * @param {Object} req
+ * @param {Object} req.body∥query∥param
+ * @param {String} req.body∥query∥param.group
+ * @param {Object} res
+ * @param {Function} next
+ * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
+ * @example
+ * app.delete('/group/:group', permissions.api.delete, function(req, res, next) {
+ *  res.render('/confirmation');
+ * });
+ * @example
+ * h1 #{permitAPI.group} baleted!
+ */
 exports.destroyGroup = runOp('destroyGroup', ['group']);
