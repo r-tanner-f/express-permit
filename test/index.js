@@ -7,6 +7,9 @@
  *| |___ >  < (_| | | | | | | |_) | |  __/   | |  __/\__ \ |_\__ \
  *|_____/_/\_\__,_|_| |_| |_| .__/|_|\___|   |_|\___||___/\__|___/
  *                          |_|
+ *
+ * This file contains unit tests covering most functions of express-permit,
+ * aside from the API functions. Fixtures are under test/example/*.js.
  */
 
 var supertest     = require('supertest');

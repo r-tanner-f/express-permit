@@ -192,8 +192,20 @@ exports.readAll = function (req, res, next) {
  * app.get('/groups', permissions.api.readGroups, function(req, res) {
  *   // Output
  *   res.locals.permitAPI.groups === [
- *     'customers',
- *     'loyalty-program',
+ *     {
+ *       group: 'customers',
+ *       permissions: {
+ *         'amusement' : {
+ *           'go-on-rides': true
+ *         }
+ *       }
+ *     },
+ *     {
+ *       group: 'managers',
+ *       permissions: {
+ *         utilities: 'all'
+ *       }
+ *     }
  *   ]
  *   res.render('/groups');
  * });
@@ -327,12 +339,22 @@ exports.rsop = runOp('rsop', ['username'], 'user');
  * @param {Object} req
  * @param {Object} req.body∥query∥param
  * @param {String} req.body∥query∥param.username
- * @param {Object} req.body∥query∥param.user See <code>User</code> typedef.
+ * @param {user} req.body∥query∥param.user 
+ * Permissions and groups. Omit username and supply as separate parameter.
  * @param {Object} res
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @param {Function} next
  * @example
  * app.put('/user/:username', permissions.api.update, function(req, res, next) {
+ *  req.body.user === {
+ *    permissions: {
+ *      amusement: {
+ *        'go-on-rides': true
+ *      }
+ *    },
+ *    groups: ['customer']
+ *  }
+ *
  *  res.render('/confirmation');
  * });
  * @example
@@ -366,7 +388,6 @@ exports.destroy = runOp('destroy', ['username']);
  * @param {String} req.body∥query∥param.username
  * @param {String} [req.body∥query∥param.suite]
  * @param {String} req.body∥query∥param.permission
- * @param {String} req
  * @param {Object} res
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @param {Function} next

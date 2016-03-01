@@ -13,7 +13,7 @@ var validate = require('./validation').validateOp;
 
 /**
  * Compile a user's permission.
- * @param {Object} [user] User returned by the Permit Store.
+ * @param {user} [user] User returned by the Permit Store.
  * @private
  */
 function compilePermissions(user) {
@@ -54,14 +54,15 @@ function compilePermissions(user) {
   return permit;
 }
 
+// If no suite is specified, default to 'root'
 function defaultSuite(args) {
   if (!args.suite) {
     args.suite = 'root';
   }
 }
 
+// We will silently fix a missing root suite -- for simplicity's sake
 function fixRoot(permissions) {
-  // We will silently fix root for simplicity's sake
   if (!permissions.root) {
     permissions.root = {};
   }
@@ -69,6 +70,16 @@ function fixRoot(permissions) {
   return permissions;
 }
 
+/**
+ * The Permit Store is exposed on <code>req.permitStore</code>.
+ * Interacting with the PermitStore directly allows for greater customization.
+ * For convenience, the drop-in API middleware is sufficient for many tasks.
+ * <br><br>
+ * See <code>express-permit/api</code> for more details on each operation.
+ * Documentation here is intentionally brief.
+ * @name PermitStore
+ * @class
+ */
 class StoreWrapper {
   constructor(store) {
     this.store = store;
@@ -101,10 +112,36 @@ class StoreWrapper {
 
   // readAll ===================================================================
 
+  /**
+   * Read all the users in the PermitStore.
+   * @memberof PermitStore
+   * @name readAll
+   * @function
+   * @param {Function} callback
+   * @example
+   * app.get('/users', function (req, res, next) {
+   *   req.permitStore.readAll(function (err, users) {
+   *      res.render(allUsersTemplate, {users: users});
+   *   });
+   * });
+   */
   readAll(callback) {
     this._defer(() => this.store.readAll(callback));
   }
 
+  /**
+   * Read all groups in the PermitStore.
+   * @memberof PermitStore
+   * @name readAllGroups
+   * @function
+   * @param {Function} callback
+   * @example
+   * app.get('/groups', function (req, res, next) {
+   *   req.permitStore.readAllGroups(function (err, groups) {
+   *      res.render(allGroupsTemplate, {groups: groups});
+   *   });
+   * });
+   */
   readAllGroups(callback) {
     this._defer(() => {
       this.store.readAllGroups(function (err, result) {
@@ -115,6 +152,21 @@ class StoreWrapper {
 
   // Users =====================================================================
 
+  /**
+   * Create a user
+   * @memberof PermitStore
+   * @name create
+   * @function
+   * @param {String} username
+   * @param {User} user
+   * @param {Function} callback
+   * @example
+   * app.post('/user', function (req, res, next) {
+   *   req.permitStore.create(req.body.username, req.body.user, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   create(args, callback) {
     this._validateAndRun(
       'create',
@@ -124,6 +176,20 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Read a user
+   * @memberof PermitStore
+   * @name read
+   * @function
+   * @param {String} username
+   * @param {Function} callback
+   * @example
+   * app.get('/user/:username', function (req, res, next) {
+   *   req.permitStore.create(req.param.username, function (err, user) {
+   *      res.render('user', {user: user});
+   *   });
+   * });
+   */
   read(args, callback) {
     this._validateAndRun(
       'read',
@@ -133,6 +199,22 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Get the resulting set of permissions for a user.
+   * The RSOP for the currently logged in user is already available on
+   * <code>res.locals.permit</code>.
+   * @memberof PermitStore
+   * @name read
+   * @function
+   * @param {String} username
+   * @param {Function} callback
+   * @example
+   * app.get('/user/:username', function (req, res, next) {
+   *   req.permitStore.rsop(req.param.username, function (err, user) {
+   *      res.render('user', {user: user});
+   *   });
+   * });
+   */
   rsop(args, callback) {
     this._validateAndRun(
       'rsop',
@@ -149,6 +231,21 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Update a user.
+   * @memberof PermitStore
+   * @name update
+   * @function
+   * @param {String} username
+   * @param {Object} user
+   * @param {Function} callback
+   * @example
+   * app.put('/user/:username', function (req, res, next) {
+   *   req.permitStore.update(req.param.username, req.body.user, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   update(args, callback) {
     this._validateAndRun(
       'update',
@@ -158,6 +255,20 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Delete a user.
+   * @memberof PermitStore
+   * @name destroy
+   * @function
+   * @param {String} username
+   * @param {Function} callback
+   * @example
+   * app.delete('/user/:username', function (req, res, next) {
+   *   req.permitStore.delete(req.param.username, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   destroy(args, callback) {
     this._validateAndRun(
       'destroy',
@@ -167,6 +278,20 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Sets a user's permissions to admin.
+   * @memberof PermitStore
+   * @name setAdmin
+   * @function
+   * @param {String} username
+   * @param {Function} callback
+   * @example
+   * app.get('/user/setAdmin/:username', function (req, res, next) {
+   *   req.permitStore.setAdmin(req.param.username, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   setAdmin(args, callback) {
     this._validateAndRun(
       'setAdmin',
@@ -176,6 +301,20 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Sets a user's permissions to owner.
+   * @memberof PermitStore
+   * @name setOwner
+   * @function
+   * @param {String} username
+   * @param {Function} callback
+   * @example
+   * app.get('/user/setOwner/:username', function (req, res, next) {
+   *   req.permitStore.setOwner(req.param.username, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   setOwner(args, callback) {
     this._validateAndRun(
       'setOwner',
@@ -186,6 +325,22 @@ class StoreWrapper {
   }
 
   // Permission Operations -----------------------------------------------------
+  /**
+   * Sets a single suite/permission pair to true.
+   * @memberof PermitStore
+   * @name addPermission
+   * @function
+   * @param {String} username
+   * @param {String} permission
+   * @param {String} [suite]
+   * @param {Function} callback
+   * @example
+   * app.get('/user/:username/addPermission/:suite?/:permission', function (req, res, next) {
+   *   req.permitStore.addPermission(req.param.username, req.param.permission, req.param.suite, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   addPermission(args, callback) {
     defaultSuite(args);
 
@@ -199,6 +354,22 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Unset a single suite/permission pair. Does not set to false.
+   * @memberof PermitStore
+   * @name removePermission
+   * @function
+   * @param {String} username
+   * @param {String} [suite]
+   * @param {String} permission
+   * @param {Function} callback
+   * @example
+   * app.get('/user/:username/removePermission/:suite?/:permission', function (req, res, next) {
+   *   req.permitStore.removePermission(,req.param.username, req.param.permission, req.param.suite, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   removePermission(args, callback) {
     defaultSuite(args);
 
@@ -212,6 +383,22 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Sets a single suite/permission pair to false.
+   * @memberof PermitStore
+   * @name blockPermission
+   * @function
+   * @param {String} username
+   * @param {String} [suite]
+   * @param {String} permission
+   * @param {Function} callback
+   * @example
+   * app.get('/user/:username/blockPermission/:suite?/:permission', function (req, res, next) {
+   *   req.permitStore.blockPermission(,req.param.username, req.param.permission, req.param.suite, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   blockPermission(args, callback) {
     defaultSuite(args);
 
@@ -226,6 +413,21 @@ class StoreWrapper {
   }
 
   // Group Operations ----------------------------------------------------------
+  /**
+   * Adds a user to a group.
+   * @memberof PermitStore
+   * @name addGroup
+   * @function
+   * @param {String} username
+   * @param {String} group
+   * @param {Function} callback
+   * @example
+   * app.get('/user/:username/addGroup/:group', function (req, res, next) {
+   *   req.permitStore.addGroup(req.params.username, req.params.group, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   addGroup(args, callback) {
     this._validateAndRun(
       'addGroup',
@@ -235,6 +437,21 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Removes a user from group.
+   * @memberof PermitStore
+   * @name removeGroup
+   * @function
+   * @param {String} username
+   * @param {String} group
+   * @param {Function} callback
+   * @example
+   * app.get('/user/:username/removeGroup/:group', function (req, res, next) {
+   *   req.permitStore.removeGroup(req.params.username, req.params.group, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   removeGroup(args, callback) {
     this._validateAndRun(
       'removeGroup',
@@ -247,6 +464,21 @@ class StoreWrapper {
   // Groups ====================================================================
 
   // CRUD ----------------------------------------------------------------------
+  /**
+   * Creates a new group
+   * @memberof PermitStore
+   * @name createGroup
+   * @function
+   * @param {String} group
+   * @param {Object} permissions
+   * @param {Function} callback
+   * @example
+   * app.post('/group', function (req, res, next) {
+   *   req.permitStore.createGroup(req, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   createGroup(args, callback) {
     this._validateAndRun(
       'createGroup',
@@ -260,6 +492,20 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Reads a group
+   * @memberof PermitStore
+   * @name readGroup
+   * @function
+   * @param {String} group
+   * @param {Function} callback
+   * @example
+   * app.get('/group/:group', function (req, res, next) {
+   *   req.permitStore.readGroup(req.param.group, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   readGroup(args, callback) {
     this._validateAndRun(
       'readGroup',
@@ -269,6 +515,21 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Updates a group
+   * @memberof PermitStore
+   * @name createGroup
+   * @function
+   * @param {String} group
+   * @param {Object} permissions
+   * @param {Function} callback
+   * @example
+   * app.put('/group', function (req, res, next) {
+   *   req.permitStore.updateGroup(req.body.group, req.body.permissions, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   updateGroup(args, callback) {
     this._validateAndRun(
       'updateGroup',
@@ -282,6 +543,20 @@ class StoreWrapper {
     );
   }
 
+  /**
+   * Deletes a group
+   * @memberof PermitStore
+   * @name destroyGroup
+   * @function
+   * @param {String} group
+   * @param {Function} callback
+   * @example
+   * app.delete('/group/:group', function (req, res, next) {
+   *   req.permitStore.destroyGroup(req.params.group, function (err, result) {
+   *      res.render('confirmation', {result: result});
+   *   });
+   * });
+   */
   destroyGroup(args, callback) {
     this._validateAndRun(
       'destroyGroup',

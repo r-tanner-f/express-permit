@@ -304,7 +304,7 @@ describe('Error handling:', function () {
     it('should throw an error if Tag is called with an invalid param',
       function () {
         var fn = function () {
-          new tags.Tagger(); //jshint ignore:line
+          new tags.initTag(); //jshint ignore:line
         };
 
         expect(fn).to.throw(Error, /invalid parameters/);

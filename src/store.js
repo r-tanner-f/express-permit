@@ -14,8 +14,9 @@ var EventEmitter = require('events').EventEmitter;
 class Store extends EventEmitter {
   constructor() {
     super();
-    this.NotFoundError = errors.NotFound;
-    this.Conflict = errors.Conflict;
+    this.error = {};
+    this.error.NotFound = errors.NotFound;
+    this.error.Conflict = errors.Conflict;
 
     this.state = 'disconnected';
   }

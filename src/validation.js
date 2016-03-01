@@ -156,7 +156,6 @@ function validateOp(op, args) {
     if (!args[param]) {
       err.push(`Missing required parameter: ${param}`);
     } else {
-      debugger;
       err.push(validators[param](args[param]));
     }
 
