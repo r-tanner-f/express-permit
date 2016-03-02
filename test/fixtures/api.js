@@ -119,13 +119,6 @@ app.get('/setOwner/:username', api.setOwner, ok);
 // Permission Operations -------------------------------------------------------
 
 app.get('/addPermission/:username/:suite?/:permission', api.addPermission, ok);
-app.get(
-  '/removePermission/:username/:suite?/:permission',
-  api.removePermission, ok
-);
-app.get(
-  '/blockPermission/:username/:suite?/:permission', api.blockPermission, ok
-);
 
 // Group Operations ------------------------------------------------------------
 

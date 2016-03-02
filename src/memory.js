@@ -51,7 +51,7 @@ module.exports = function (expressPermit) {
   // CRUD ----------------------------------------------------------------------
     create(username, permit, callback) {
       if (this.users[username]) {
-        return callback(new this.Conflict('User already exists'));
+        return callback(new this.error.Conflict('User already exists'));
       }
 
       this.users[username] = permit;
@@ -60,7 +60,7 @@ module.exports = function (expressPermit) {
 
     read(username, callback) {
       if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
+        return callback(new this.error.NotFound('User does not exist'));
       }
 
       var user = clone(this.users[username]);
@@ -81,7 +81,7 @@ module.exports = function (expressPermit) {
 
     update(username, permit, callback) {
       if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
+        return callback(new this.error.NotFound('User does not exist'));
       }
 
       this.users[username] = permit;
@@ -90,7 +90,7 @@ module.exports = function (expressPermit) {
 
     destroy(username, callback) {
       if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
+        return callback(new this.error.NotFound('User does not exist'));
       }
 
       delete this.users[username];
@@ -99,7 +99,7 @@ module.exports = function (expressPermit) {
 
     setAdmin(username, callback) {
       if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
+        return callback(new this.error.NotFound('User does not exist'));
       }
 
       this.users[username].permissions = 'admin';
@@ -108,7 +108,7 @@ module.exports = function (expressPermit) {
 
     setOwner(username, callback) {
       if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
+        return callback(new this.error.NotFound('User does not exist'));
       }
 
       this.users[username].permissions = 'owner';
@@ -119,7 +119,7 @@ module.exports = function (expressPermit) {
 
     addPermission(username, permission, suite, callback) {
       if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
+        return callback(new this.error.NotFound('User does not exist'));
       }
 
       if (!this.users[username].permissions[suite]) {
@@ -130,50 +130,19 @@ module.exports = function (expressPermit) {
       callback();
     }
 
-    removePermission(username, permission, suite, callback) {
-      if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
-      }
-
-      if (
-        !this.users[username].permissions[suite] ||
-        !this.users[username].permissions[suite][permission]
-      ) {
-        return callback(new this.NotFoundError(
-          'Suite or permission does not exist'
-        ));
-      }
-
-      delete this.users[username].permissions[suite][permission];
-      callback();
-    }
-
-    blockPermission(username, permission, suite, callback) {
-      if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
-      }
-
-      if (!this.users[username].permissions[suite]) {
-        this.users[username].permissions[suite] = {};
-      }
-
-      this.users[username].permissions[suite][permission] = false;
-      callback();
-    }
-
   // Group Operations ----------------------------------------------------------
 
     addGroup(username, group, callback) {
       if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
+        return callback(new this.error.NotFound('User does not exist'));
       }
 
       if (this.users[username].groups.indexOf(group) !== -1) {
-        return callback(new this.Conflict('User is already in group'));
+        return callback(new this.error.Conflict('User is already in group'));
       }
 
       if (!this.groups[group]) {
-        return callback(new this.NotFoundError('Group does not exist'));
+        return callback(new this.error.NotFound('Group does not exist'));
       }
 
       this.users[username].groups.push(group);
@@ -182,12 +151,12 @@ module.exports = function (expressPermit) {
 
     removeGroup(username, group, callback) {
       if (!this.users[username]) {
-        return callback(new this.NotFoundError('User does not exist'));
+        return callback(new this.error.NotFound('User does not exist'));
       }
 
       if (this.users[username].groups.indexOf(group) === -1) {
         return callback(
-          new this.NotFoundError('User is not a member of group')
+          new this.error.NotFound('User is not a member of group')
         );
       }
 
@@ -204,7 +173,7 @@ module.exports = function (expressPermit) {
   // CRUD ----------------------------------------------------------------------
     createGroup(group, permissions, callback) {
       if (this.groups[group]) {
-        return callback(new this.Conflict('Group already exists'));
+        return callback(new this.error.Conflict('Group already exists'));
       }
 
       this.groups[group] = permissions;
@@ -213,7 +182,7 @@ module.exports = function (expressPermit) {
 
     readGroup(group, callback) {
       if (!this.groups[group]) {
-        return callback(new this.NotFoundError('Group does not exist'));
+        return callback(new this.error.NotFound('Group does not exist'));
       }
 
       group = clone(this.groups[group]);
@@ -223,7 +192,7 @@ module.exports = function (expressPermit) {
 
     updateGroup(group, permissions, callback) {
       if (!this.groups[group]) {
-        return callback(new this.NotFoundError('Group does not exist'));
+        return callback(new this.error.NotFound('Group does not exist'));
       }
 
       this.groups[group] = permissions;
@@ -232,7 +201,7 @@ module.exports = function (expressPermit) {
 
     destroyGroup(group, callback) {
       if (!this.groups[group]) {
-        return callback(new this.NotFoundError('Group does not exist'));
+        return callback(new this.error.NotFound('Group does not exist'));
       }
 
       delete this.groups[group];

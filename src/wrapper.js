@@ -325,6 +325,7 @@ class StoreWrapper {
   }
 
   // Permission Operations -----------------------------------------------------
+  
   /**
    * Sets a single suite/permission pair to true.
    * @memberof PermitStore
@@ -348,64 +349,6 @@ class StoreWrapper {
       'addPermission',
       args,
       () => this.store.addPermission(
-        args.username, args.permission, args.suite, callback
-      ),
-      callback
-    );
-  }
-
-  /**
-   * Unset a single suite/permission pair. Does not set to false.
-   * @memberof PermitStore
-   * @name removePermission
-   * @function
-   * @param {String} username
-   * @param {String} [suite]
-   * @param {String} permission
-   * @param {Function} callback
-   * @example
-   * app.get('/user/:username/removePermission/:suite?/:permission', function (req, res, next) {
-   *   req.permitStore.removePermission(,req.param.username, req.param.permission, req.param.suite, function (err, result) {
-   *      res.render('confirmation', {result: result});
-   *   });
-   * });
-   */
-  removePermission(args, callback) {
-    defaultSuite(args);
-
-    this._validateAndRun(
-      'removePermission',
-      args,
-      () => this.store.removePermission(
-        args.username, args.permission, args.suite, callback
-      ),
-      callback
-    );
-  }
-
-  /**
-   * Sets a single suite/permission pair to false.
-   * @memberof PermitStore
-   * @name blockPermission
-   * @function
-   * @param {String} username
-   * @param {String} [suite]
-   * @param {String} permission
-   * @param {Function} callback
-   * @example
-   * app.get('/user/:username/blockPermission/:suite?/:permission', function (req, res, next) {
-   *   req.permitStore.blockPermission(,req.param.username, req.param.permission, req.param.suite, function (err, result) {
-   *      res.render('confirmation', {result: result});
-   *   });
-   * });
-   */
-  blockPermission(args, callback) {
-    defaultSuite(args);
-
-    this._validateAndRun(
-      'blockPermission',
-      args,
-      () => this.store.blockPermission(
         args.username, args.permission, args.suite, callback
       ),
       callback

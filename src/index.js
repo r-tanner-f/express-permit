@@ -84,7 +84,7 @@ function permissions(options) {
     store.rsop({ username: username }, function (err, permit) {
 
       // If no permissions are found for this user...
-      if (err instanceof options.store.NotFoundError) {
+      if (err instanceof options.store.error.NotFound) {
 
         // then build defaults
         var defaultPermit = options.defaultPermit || {

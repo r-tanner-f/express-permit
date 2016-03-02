@@ -18,7 +18,6 @@ var async = require('async');
 var expressPermit = require('../');
 var BadRequest = require('../src').error.BadRequest;
 var StoreWrapper = require('../src/wrapper');
-var tags = require('../src/tags');
 var validation = require('../src/validation');
 var validators = validation.validators;
 
@@ -92,8 +91,9 @@ describe('Error handling:', function () {
       var middleware = expressPermit({
         username: () => 'foo',
         store: {
-          NotFoundError: function () {},
-
+          error: {
+            NotFound: function () {},
+          },
           state: 'connected',
           rsop: function (u, cb) {
             cb('Oh noes!');
@@ -178,7 +178,7 @@ describe('Error handling:', function () {
     it('should throw a Conflict error when creating a user that already exists',
        function (done) {
          memory.create('someUser', undefined, function (err) {
-           expect(err).to.be.an.instanceof(memory.Conflict);
+           expect(err).to.be.an.instanceof(memory.error.Conflict);
            expect(err.message).to.equal('User already exists');
            done();
          });
@@ -189,7 +189,7 @@ describe('Error handling:', function () {
       'should throw a Conflict error when creating a group that already exists',
       function (done) {
         memory.createGroup('someGroup', undefined, function (err) {
-          expect(err).to.be.an.instanceof(memory.Conflict);
+          expect(err).to.be.an.instanceof(memory.error.Conflict);
           expect(err.message).to.equal('Group already exists');
           done();
         });
@@ -199,31 +199,19 @@ describe('Error handling:', function () {
       'should throw a Conflict when readding a user to a group',
       function (done) {
         memory.addGroup('someUser', 'someGroup', function (err) {
-          expect(err).to.be.an.instanceof(memory.Conflict);
+          expect(err).to.be.an.instanceof(memory.error.Conflict);
           expect(err.message).to.equal('User is already in group');
           done();
         });
       }
     );
-    it('should throw a NotFoundError when user/group is not found',
+    it('should throw a NotFound when user/group is not found',
       function (done) {
 
         var tests = [
           callback => memory.update('notfound', undefined, reverse(callback)),
           callback => memory.destroy('notfound', reverse(callback)),
           callback => memory.addPermission(
-            'notfound', undefined, undefined, reverse(callback)
-          ),
-          callback => memory.removePermission(
-            'notfound', undefined, undefined, reverse(callback)
-          ),
-          callback => memory.removePermission(
-            'someUser', 'notfound', 'notfound', reverse(callback)
-          ),
-          callback => memory.removePermission(
-            'someUser', 'notfound', 'someSuite', reverse(callback)
-          ),
-          callback => memory.blockPermission(
             'notfound', undefined, undefined, reverse(callback)
           ),
           callback => memory.addGroup('notfound', undefined, reverse(callback)),
@@ -246,7 +234,7 @@ describe('Error handling:', function () {
         async.parallel(tests, function (err, result) {
           expect(err).to.not.exist();
           result.forEach(function (r, index) {
-            if (!(r instanceof memory.NotFoundError)) {
+            if (!(r instanceof memory.error.NotFound)) {
               throw new Error(`Failure: ${tests[index]}. Got: ${r}}`);
             }
           });
@@ -304,7 +292,7 @@ describe('Error handling:', function () {
     it('should throw an error if Tag is called with an invalid param',
       function () {
         var fn = function () {
-          new tags.initTag(); //jshint ignore:line
+          expressPermit.tag(); //jshint ignore:line
         };
 
         expect(fn).to.throw(Error, /invalid parameters/);

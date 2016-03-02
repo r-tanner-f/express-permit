@@ -188,48 +188,6 @@ describe('API', function () {
     });
   });
 
-  it('should add a suite permission to a user', function (done) {
-    agent
-    .get('/addPermission/someUser/suite/add-me')
-    .expect(200)
-    .end(function (err) {
-      if (err) throw err;
-      expect(someUser.permissions.suite['add-me']).to.be.true();
-      done();
-    });
-  });
-
-  it('should remove a root permission from user', function (done) {
-    agent
-    .get('/removePermission/someUser/delete-me')
-    .expect(200)
-    .end(function (err) {
-      if (err) throw err;
-      expect(someUser.permissions.root['delete-me']).to.not.exist();
-      done();
-    });
-  });
-
-  it('should block a root permission to a user', function (done) {
-    agent
-    .get('/blockPermission/someUser/block-me/')
-    .expect(200)
-    .end(ok(
-      () => expect(someUser.permissions.root['block-me']).to.equal(false),
-      done
-    ));
-  });
-
-  it('should block a suite permission to a user', function (done) {
-    agent
-    .get('/blockPermission/someUser/suite/block-me/')
-    .expect(200)
-    .end(ok(
-      () => expect(someUser.permissions.suite['block-me']).to.equal(false),
-      done
-    ));
-  });
-
   // Group Operations ----------------------------------------------------------
 
   it('should add a group to a user', function (done) {

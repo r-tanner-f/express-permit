@@ -404,53 +404,6 @@ exports.addPermission = runOp(
 );
 
 /**
- * Unsets (but does not explicitly block!) a user permission in a suite. Suite defaults to root.
- * @function
- * @param {Object} req
- * @param {Object} req.body∥query∥param
- * @param {String} req.body∥query∥param.username
- * @param {String} [req.body∥query∥param.suite]
- * @param {String} req.body∥query∥param.permission
- * @param {Object} res
- * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
- * @param {Function} next
- * @example
- * app.get('/user/:username/removePermission/:suite?/:permission', permissions.api.removePermission, function(req, res, next) {
- *   res.render('/confirmation');
- *  });
- * @example
- * h1 #{permitAPI.username} now has permission to #{permitAPI.suite} #{permitAPI.permission}!
- */
-exports.removePermission = runOp(
-  'removePermission',
-  ['username', 'permission', 'suite']
-);
-
-/**
- * Sets a user permission in a suite to false, blocking any group inheritance (use sparingly). Suite defaults to root.
- * @function
- * @param {Object} req
- * @param {Object} req.body∥query∥param
- * @param {String} req.body∥query∥param.username
- * @param {String} [req.body∥query∥param.suite]
- * @param {String} req.body∥query∥param.permission
- * @param {String} req
- * @param {Object} res
- * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
- * @param {Function} next
- * @example
- * app.put('/blockPermission/:username', permissions.api.blockPermission, function(req, res, next) {
- *   res.render('/confirmation');
- *  });
- * @example
- * h1 #{permitAPI.username} now has permission to #{permitAPI.suite} #{permitAPI.permission}!
- */
-exports.blockPermission = runOp(
-  'blockPermission',
-  ['username', 'permission', 'suite']
-);
-
-/**
  * Sets a user's permissions to the string 'admin', granting them access to everything.
  * Recommended to pair this with an isAdmin or isOwner check.
  * @function
