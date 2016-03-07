@@ -26,8 +26,8 @@ function compilePermissions(user) {
   }
 
   // Otherwise, loop through
-  for (var i = 0; i < user.groups.length; i++) {
-    let group = user.groups[i];
+  for (var i = 0; i < user.groupPermissions.length; i++) {
+    let group = user.groupPermissions[i];
 
     for (let suite in group) {
 

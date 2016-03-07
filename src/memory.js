@@ -72,7 +72,7 @@ module.exports = function (expressPermit) {
         if (err) {return callback(err);}
 
         if (user.groups) {
-          user.groups = user.groups.map(group => this.groups[group]);
+          user.groupPermissions = user.groups.map(group => this.groups[group]);
         }
 
         callback(null, user);

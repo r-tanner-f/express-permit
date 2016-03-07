@@ -43,7 +43,6 @@ function runOp(op, params, api) {
       args[param] = parse;
     });
 
-    debugger;
     // Call the op with arguments object we built
     req.permitStore[op](args, function (err, result) {
 
