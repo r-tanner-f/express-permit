@@ -204,7 +204,7 @@ class StoreWrapper {
    * The RSOP for the currently logged in user is already available on
    * <code>res.locals.permit</code>.
    * @memberof PermitStore
-   * @name read
+   * @name rsop
    * @function
    * @param {String} username
    * @param {Function} callback
@@ -219,12 +219,12 @@ class StoreWrapper {
     this._validateAndRun(
       'rsop',
       args,
-      () => this.store.rsop(args.username, function (err, result) {
+      () => this.store.rsop(args.username, function (err, user) {
         if (err) {
           return callback(err);
         }
-
-        callback(null, compilePermissions(result));
+        user.permit = compilePermissions(user);
+        callback(null, user);
       }),
 
       callback
@@ -325,7 +325,7 @@ class StoreWrapper {
   }
 
   // Permission Operations -----------------------------------------------------
-  
+
   /**
    * Sets a single suite/permission pair to true.
    * @memberof PermitStore

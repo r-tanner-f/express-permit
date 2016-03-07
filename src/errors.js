@@ -34,8 +34,6 @@ exports.Forbidden = class PermissionsError {
   constructor(res, action, suite) {
     this.message = `Permissions Error: Required ${suite} ${action}`;
     this.name = this.constructor.name;
-    this.baseUrl = res.baseUrl;
-    this.route   = res.route;
     this.action  = action;
     this.suite = suite;
     this.permits = res.locals.permit;

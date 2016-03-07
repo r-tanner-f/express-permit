@@ -103,11 +103,11 @@ app.get('/groups', api.readAllGroups, function (req, res) {
 app.post('/user/:username', api.create, ok);
 
 app.get('/user/:username', api.read, function (req, res) {
-  res.send(res.locals.permitAPI.result);
+  res.send(res.locals.permitAPI.user);
 });
 
 app.get('/user/rsop/:username', api.rsop, function (req, res) {
-  res.send(res.locals.permitAPI.result);
+  res.send(res.locals.permitAPI.user);
 });
 
 app.put('/user/:username', api.update, ok);
@@ -132,7 +132,7 @@ app.get('/removeGroup/:username/:group', api.removeGroup, ok);
 app.post('/group/:group', api.createGroup, ok);
 
 app.get('/group/:group', api.readGroup, function (req, res) {
-  res.send(res.locals.permitAPI.result);
+  res.send(res.locals.permitAPI.group);
 });
 
 app.put('/group/:group', api.updateGroup, ok);

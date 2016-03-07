@@ -12,7 +12,7 @@
 var Express = require('express');
 var boringRouter = Express.Router();
 
-var boring = require('../../src/index.js').tag('boring', boringRouter);
+var boring = require('../../src/index.js').tag('boring');
 
 // Demonstrates a tracked suite with a default set
 boringRouter.get('/twiddle', boring('be-bored'), function (req, res) {

@@ -22,7 +22,8 @@ module.exports = permissions;
 var errors = require('./errors');
 module.exports.error = errors;
 
-module.exports.api = require('./api');
+var api = require('./api');
+module.exports.api = api;
 
 module.exports.Store = require('./store');
 module.exports.MemoryPermitStore = require('./memory');
@@ -81,7 +82,7 @@ function permissions(options) {
     }
 
     // Attempt to retrieve the user's permit
-    store.rsop({ username: username }, function (err, permit) {
+    store.rsop({ username: username }, function (err, user) {
 
       // If no permissions are found for this user...
       if (err instanceof options.store.error.NotFound) {
@@ -110,7 +111,7 @@ function permissions(options) {
       } else {
 
         // Otherwise, add the user to res.locals.permit
-        res.locals.permit = permit;
+        res.locals.permit = user.permit;
         return next();
       }
     });
@@ -130,86 +131,6 @@ function permissions(options) {
  */
 
 /**
- * The Tagger class is instantiated when tracked tagging or a default suite
- * is being used.
- * @private
- * @param {String} [suite] The default suite to be used.
- * @param {Function} [router] The we're tracking.
- */
-class Tagger {
-  constructor() {
-
-    // Three possible inputs
-    // Suite:
-    if (typeof arguments[0] === 'string') {
-      this.defaultSuite = arguments[0];
-    }
-
-    // Router:
-    else if (typeof arguments[0] === 'function' && !arguments[1]) {
-      this.defaultSuite = 'root';
-      this.router = arguments[0];
-    }
-
-    // Router and Suite:
-    else if (
-      typeof arguments[0] === 'function' &&
-      typeof arguments[1] === 'string'
-    ) {
-      this.router = arguments[0];
-      this.defaultSuite = arguments[1];
-    } else {
-      throw new Error('Tag called with invalid parameters.\n' +
-                       'Got ' + arguments[0] + ', ' + arguments[1] + '.\n' +
-                       'Need a router, suite, or router + suite.');
-    }
-  }
-
-  // This function is exposed to the user. Documented elsewhere.
-  tag(action, suite) {
-    suite = suite ? suite : this.defaultSuite;
-
-    // If this a tracked tag
-    if (this.router) {
-      this._trackTag(action, suite);
-    }
-
-    return check(action, suite);
-  }
-
-  /**
-   * Used to dump permissions on to the router for later collection.
-   * @param {String} Action
-   * The action we are applying a permissions check to.
-   * @param {String} Suite
-   * The collection, or suite, of actions we are applying a permissions check to.
-   */
-  _trackTag(action, suite) {
-    suite = suite ? suite : this.defaultSuite;
-    let router = this.router;
-
-    // If the router doesn't already have permissions on it, create a new map
-    if (!router.permissions) {
-      router.permissions = new Map();
-    }
-
-    let permissions = router.permissions;
-
-    //Does the router's permissions have the suite?
-    if (!permissions.has(suite)) {
-
-      // Add a new set if not
-      permissions.set(suite, new Set([action]));
-    }
-
-    // Get the suite and add the permission to the Set
-    else {
-      permissions.get(suite).add(action);
-    }
-  }
-}
-
-/**
  * Express middleware that performs a check of user permissions.
  * Will <code>next()</code> an instanceof <code>Forbidden</code>
  * if action is not permitted.
@@ -225,7 +146,6 @@ class Tagger {
  *    res.send('wheee!');
  * });
  *
- *
  * // Forbidden handler
  * app.use(function(err, req, res, next) {
  *   if (err instanceof permissions.error.Forbidden) {
@@ -235,9 +155,16 @@ class Tagger {
  *   }
  * });
  */
-
 function check(action, suite) {
-  if (!suite) {suite = 'root';}
+
+  //Add to tracking
+  var map = api.map;
+
+  if (!map.has(suite)) {
+    map.set(suite, new Set([action]));
+  } else {
+    map.get(suite).add(action);
+  }
 
   return function permitCheck(req, res, next) {
     // If for some reason there is no res.locals.permit,
@@ -285,7 +212,7 @@ function check(action, suite) {
         permit[suite] &&
 
         // All is true
-        permit[suite].all === true  &&
+        permit[suite].all === true &&
 
         // The permission is NOT explicitly blocked
         permit[suite][action] !== false
@@ -303,48 +230,19 @@ function check(action, suite) {
 
 /**
  * Returns a tagged permit check (See <code>check</code> function).
- * Used for setting a default suite and/or for
- * tracking permissions used throughout the app.
- * @param {String} [suite] The default suite to be used.
- * @param {Function} [router] The we're tracking.
- * @returns check See <code>check</code> function documentation.
- * @example <caption>Tracking and Default Suite</caption>
+ * Used for setting a default suite.
+ * @example
  * var app    = Express.Router();
- *
- * // Tracked with default suite:
- * var permit = require('express-permit').tag(app, 'amusement');
- *
- * app.get('/rollercoaster', permit('go-on-rides'), function(req, res, next) {
- *   res.send('wheee!');
- * }):
- * @example <caption>Default suite</caption>
- * var app    = Express.Router();
- *
- * // Default suite only:
  * var permit = require('express-permit').tag('amusement');
  *
  * app.get('/rollercoaster', permit('go-on-rides'), function(req, res, next) {
  *   res.send('wheee!');
  * }):
- * @example <caption>Tracking only</caption>
- * var app    = Express.Router();
- *
- * // Tracking only:
- * var permit = require('express-permit').tag(app);
- *
- * app.get('/rollercoaster', permit('go-on-rides', 'amusement'), function(req, res, next) {
- *   res.send('wheee!');
- * }):
  */
-function tag() {
-  // If params were sent backwards, be kind and rewind
-  if (typeof arguments[0] === 'string' && typeof arguments[1] === 'function') {
-    let tagger = new Tagger(arguments[1], arguments[0]);
-    return tagger.tag.bind(tagger);
-  }
-
-  let tagger = new Tagger(...arguments);
-  return tagger.tag.bind(tagger);
+function tag(suite) {
+  return function (action) {
+    return check(action, suite);
+  };
 }
 
 /*

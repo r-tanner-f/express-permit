@@ -286,17 +286,4 @@ describe('Error handling:', function () {
       });
     });
   });
-
-  // Begin tags
-  describe('Tags', function () {
-    it('should throw an error if Tag is called with an invalid param',
-      function () {
-        var fn = function () {
-          expressPermit.tag(); //jshint ignore:line
-        };
-
-        expect(fn).to.throw(Error, /invalid parameters/);
-      }
-    );
-  });
 });

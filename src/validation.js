@@ -113,23 +113,23 @@ const validators = {
     typeof p === 'boolean' ? null :
     `Permission key/value pair must be boolean. Got ${p}`,
 
-  user: function (p) {
+  user: function (u) {
     var err = [];
-    if (!p) {
-      err.push(`Missing permit: Got ${p}.`);
+    if (!u) {
+      err.push(`Missing user: Got ${u}.`);
       return err;
     }
 
-    var pErrs = validators.permissions(p.permissions);
+    var pErrs = validators.permissions(u.permissions);
     if (pErrs) {
       err.push(pErrs);
     }
 
-    if (!Array.isArray(p.groups)) {
-      err.push(`Groups must be an array (can be empty) Got ${p.groups}.`);
+    if (!Array.isArray(u.groups)) {
+      err.push(`Groups must be an array (can be empty) Got ${u.groups}.`);
     }
 
-    for (var key in p) {
+    for (var key in u) {
       if (key !== 'permissions' && key !== 'groups') {
         err.push(`Unknown key in permission. Got: ${key}. ` +
                  'Only "permissions" and "groups" allowed');

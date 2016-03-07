@@ -12,11 +12,18 @@
  * aside from the API functions. Fixtures are under test/example/*.js.
  */
 
+function clearCache() {
+  Object.keys(require.cache).forEach(function (key) {
+    delete require.cache[key];
+  });
+}
+
 var supertest     = require('supertest');
 var async         = require('async');
 
 var testTree      = require('./helper').testTree;
 var login         = require('./helper').login;
+
 var amusementPark = require('./example');
 
 describe('Example usage', function () {
@@ -163,18 +170,26 @@ describe('Example usage', function () {
   });
 
   it('should produce an accurate permissions list', function (done) {
-    var agent = supertest.agent(amusementPark);
+    clearCache();
+    var clearAmusementPark = require('./example');
+    var agent = supertest.agent(clearAmusementPark);
 
     testTree(agent, {
       amusement: [
-        'go-on-rides',
         'eat-popcorn',
+        'go-on-rides',
       ],
       moarAmusement: [
         'play-games',
       ],
+      moarBoring: [
+        'be-boring',
+      ],
       boring: [
         'be-bored',
+      ],
+      root: [
+        'enter-park',
       ],
     }, done);
   });

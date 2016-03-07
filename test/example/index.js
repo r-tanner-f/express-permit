@@ -105,11 +105,11 @@ app.get('/login/:user', function (req, res) {
   res.send('Logged in as ' + req.params.user);
 });
 
-app.get('/ticket-booth', check('enter-park'), function (req, res) {
+app.get('/ticket-booth', check('enter-park', 'root'), function (req, res) {
   res.send('you may enter!!');
 });
 
-app.use('/park', check('enter-park'),
+app.use('/park', check('enter-park', 'root'),
   amusementRouter, moarAmusementRouter, boringRouter, moarBoringRouter
 );
 

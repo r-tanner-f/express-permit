@@ -117,7 +117,7 @@ describe('API', function () {
     .expect(200)
     .end(function (err, result) {
       if (err) throw err;
-      expect(result.body).to.deep.equal({
+      expect(result.body.permit).to.deep.equal({
         'block-test': { 'block-me': false },
         'group-test': { 'some-perm': true, 'add-me': true },
       });

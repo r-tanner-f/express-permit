@@ -8,8 +8,6 @@
  * /_/   \_\_|  |___|
  */
 
-var traverse = require('traverse');
-
 /**
  * API module for use as Express middleware
  * @module express-permit/api
@@ -20,11 +18,11 @@ var traverse = require('traverse');
  * @returns {Function} middleware
  * @param {String} op Key of operation to be called
  * @param {Array} params Parameters of the operation
- * @param {String} [result] Key to store result of operation on permitAPI
+ * @param {String} [api] Key to store result of operation on permitAPI
  * @private
  */
-function runOp(op, params, result) {
-  result = result || 'result';
+function runOp(op, params, api) {
+  api = api || 'result';
 
   return function (req, res, next) {
     var args = {};
@@ -45,6 +43,7 @@ function runOp(op, params, result) {
       args[param] = parse;
     });
 
+    debugger;
     // Call the op with arguments object we built
     req.permitStore[op](args, function (err, result) {
 
@@ -54,7 +53,7 @@ function runOp(op, params, result) {
       }
 
       // Put the result (if any) on the res.locals
-      res.locals.permitAPI.result = result;
+      res.locals.permitAPI[api] = result;
       return next();
     });
   };
@@ -87,17 +86,14 @@ function runOp(op, params, result) {
  *      each permission in permissions
  *        li= permission
  */
+
+// HACK Treating this module as a singleton...
+// Could break if the module doesn't get cached...
+var map = new Map();
+exports.map = map;
 exports.list = function listSuites(req, res, next) {
-  var map = new Map();
 
-  // Scrape permissions off the base app
-  scrapePermissions(req.app, map);
-
-  // This is expensive. Consider "caching" the result.
-  traverse(req.app._router.stack).forEach(function (node) {
-    scrapePermissions(node, map);
-  });
-
+  // De-Mapify the list in to an object
   var list = {};
 
   map.forEach(function (set, key) {
@@ -106,31 +102,12 @@ exports.list = function listSuites(req, res, next) {
       list[key] = [];
     }
 
-    list[key] = list[key].concat(Array.from(set));
+    list[key] = list[key].concat(Array.from(set)).sort();
   });
 
   res.locals.permitAPI.list = list;
   next();
 };
-
-// Scrape permissions off routers and apps
-function scrapePermissions(node, map) {
-  // Check if the node we're looking at is a permissions object
-  if (!node || !node.permissions) {return;}
-
-  //Iterate over the permissions Map
-  node.permissions.forEach(function (actions, suite) {
-
-    // If the map doesn't currently have that suite, add it
-    if (!map.has(suite)) {
-      map.set(suite, actions);
-    } else {
-      // If it does have the suite, combine the sets
-      var set = map.get(suite);
-      set = new Set([...set, actions]);
-    }
-  });
-}
 
 /**
  * Read all users in PermitStore
@@ -167,7 +144,7 @@ function scrapePermissions(node, map) {
  * @example
  * h1 Users
  * each user in permitAPI.users
- *   h2= permitAPI.user.username
+ *   h2= user.username
  *   h3 Groups
  *   ul
  *     each group in permitAPI.user.groups

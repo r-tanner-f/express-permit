@@ -13,7 +13,7 @@ var Express = require('express');
 var amusementRouter     = Express.Router();
 
 var amusement = require('../../src/index.js')
-.tag('amusement', amusementRouter);
+.tag('amusement');
 
 // Demonstrates a tracked tag with a default suite set
 amusementRouter.get('/rides', amusement('go-on-rides'), function (req, res) {
