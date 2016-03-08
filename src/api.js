@@ -457,6 +457,25 @@ exports.addGroup = runOp('addGroup', ['username', 'group']);
 exports.removeGroup = runOp('removeGroup', ['username', 'group']);
 
 /**
+ * Updates a user's groups
+ * @function
+ * @param {Object} req
+ * @param {Object} req.body∥query∥param
+ * @param {String} req.body∥query∥param.username
+ * @param {String} req.body∥query∥param.groups
+ * @param {Object} res
+ * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
+ * @param {Function} next
+ * @example
+ * app.put('/updateGroups/:username', permissions.api.updateGroups, function(req, res, next) {
+ *   res.render('/confirmation');
+ * });
+ * @example
+ *  h1 #{permitAPI.username} is now a member of #{permitAPI.groups}!
+ */
+exports.updateGroups = runOp('updateGroups', ['username', 'groups']);
+
+/**
  * Create a group
  * @function
  * @param {Object} req

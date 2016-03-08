@@ -210,6 +210,17 @@ describe('API', function () {
     ));
   });
 
+  it('should update a user\'s groups', function (done) {
+    agent
+    .put('/updateGroups/someUser')
+    .send({ groups: ['updated-all'] })
+    .expect(200)
+    .end(ok(
+      () => expect(someUser.groups).to.deep.equal(['updated-all']),
+      done
+    ));
+  });
+
   // Groups ====================================================================
 
   // CRUD ----------------------------------------------------------------------

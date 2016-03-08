@@ -41,6 +41,8 @@ const descriptors = {
 
   removeGroup: ['username', 'group'],
 
+  updateGroups: ['username', 'groups'],
+
   // Groups:===================================================================
 
   // CRUD ----------------------------------------------------------------------
@@ -73,6 +75,8 @@ const validators = {
   suite: s => typeof s === 'string' ? null : `Suite must be a string. Got ${s}`,
 
   group: g => typeof g === 'string' ? null : `Group must be a string. Got ${g}`,
+
+  groups: g=> Array.isArray(g) ? null : `Groups must be an array. Got ${g}`,
 
   permissions: function (p) {
     var err = [];

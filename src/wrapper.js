@@ -356,6 +356,30 @@ class StoreWrapper {
   }
 
   // Group Operations ----------------------------------------------------------
+
+  /**
+   * Updates a user's groups
+   * @name updateGroups
+   * @function
+   * @param {String} username
+   * @param {String[]} groups
+   * @param {Function} callback
+   * @example
+   * app.post('/user/:username/updateGroups', function (req, res, next) {
+   *   req.permitStore.updateGroups(req.params.username, req.params.group), function (err, result) {
+   *     res.render('confirmation', {result: result});
+   *   });
+   * })
+   */
+  updateGroups(args, callback) {
+    this._validateAndRun(
+      'updateGroups',
+      args,
+      () => this.store.updateGroups(args.username, args.groups, callback),
+      callback
+    );
+  }
+
   /**
    * Adds a user to a group.
    * @memberof PermitStore

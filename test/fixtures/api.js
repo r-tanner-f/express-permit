@@ -124,6 +124,7 @@ app.get('/addPermission/:username/:suite?/:permission', api.addPermission, ok);
 
 app.get('/addGroup/:username/:group', api.addGroup, ok);
 app.get('/removeGroup/:username/:group', api.removeGroup, ok);
+app.put('/updateGroups/:username', api.updateGroups, ok);
 
 // Groups ======================================================================
 

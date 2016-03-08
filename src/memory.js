@@ -168,6 +168,15 @@ module.exports = function (expressPermit) {
       callback();
     }
 
+    updateGroups(username, groups, callback) {
+      if (!this.users[username]) {
+        return callback(new this.error.NotFound('User does not exist'));
+      }
+
+      this.users[username].groups = groups;
+      callback();
+    }
+
   // Groups ====================================================================
 
   // CRUD ----------------------------------------------------------------------
