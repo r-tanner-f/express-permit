@@ -30,7 +30,12 @@ module.exports.MemoryPermitStore = require('./memory');
 module.exports._wrapper = StoreWrapper;
 
 module.exports.tag = tag;
+
 module.exports.check = check;
+
+module.exports.check.isAdmin = isAdminMiddleware;
+module.exports.check.isSuperadmin = isSuperadminMiddleware;
+module.exports.check.isOwner = isOwnerMiddleware;
 
 /**
  * Configure express-permit middleware for handling and retrieving permissions.
@@ -67,8 +72,31 @@ function permissions(options) {
 
   // Return middleware for Express to execute on each request.
   return function (req, res, next) {
-
     res.locals.permitAPI = {};
+
+    // local helpers
+
+    function defaultPermit(permit, fn) {
+      if (!permit) { permit = res.locals.permit; }
+
+      return fn(permit);
+    }
+
+    res.locals.permitAPI.hasAction = function (action, suite, permit) {
+      return defaultPermit(permit, permit => hasAction(action, suite, permit));
+    };
+
+    res.locals.permitAPI.isAdmin = function (permit) {
+      return defaultPermit(permit, isAdmin);
+    };
+
+    res.locals.permitAPI.isSuperadmin = function (permit) {
+      return defaultPermit(permit, isSuperadmin);
+    };
+
+    res.locals.permitAPI.isOwner = function (permit) {
+      return defaultPermit(permit, isOwner);
+    };
 
     // Add the store to req for use in another middleware
     req.permitStore = store;
@@ -140,7 +168,7 @@ function permissions(options) {
  * The name of the action performed in this controller,
  * or name of permissions requried.
  * @param {String} [suite]
- * The name of the suite the action is found under. Defaults to 'root'.
+ * The name of the suite the action is found under.
  * @example
  * app.get('/rollercoaster', check('go-on-rides', 'amusement'), function(req, res, next) {
  *    res.send('wheee!');
@@ -173,7 +201,7 @@ function check(action, suite) {
       var permit = res.locals.permit;
 
       // If owner or admin, permit any action
-      if (permit === 'owner' || permit === 'admin') {
+      if (permit === 'owner' || permit === 'superadmin' || permit === 'admin') {
         return next();
 
       /**
@@ -228,6 +256,30 @@ function check(action, suite) {
   };
 }
 
+function isAdminMiddleware(req, res, next) {
+  if (isAdmin(res.locals.permit)) {
+    return next();
+  }
+
+  next(new errors.Forbidden(res, 'admin', 'is'));
+}
+
+function isSuperadminMiddleware(req, res, next) {
+  if (isSuperadmin(res.locals.permit)) {
+    return next();
+  }
+
+  next(new errors.Forbidden(res, 'superadmin', 'is'));
+}
+
+function isOwnerMiddleware(req, res, next) {
+  if (isOwner(res.locals.permit)) {
+    return next();
+  }
+
+  next(new errors.Forbidden(res, 'owner', 'is'));
+}
+
 /**
  * Returns a tagged permit check (See <code>check</code> function).
  * Used for setting a default suite.
@@ -243,6 +295,50 @@ function tag(suite) {
   return function (action) {
     return check(action, suite);
   };
+}
+
+/*
+ * _   _      _
+ *| | | | ___| |_ __   ___ _ __ ___
+ *| |_| |/ _ \ | '_ \ / _ \ '__/ __|
+ *|  _  |  __/ | |_) |  __/ |  \__ \
+ *|_| |_|\___|_| .__/ \___|_|  |___/
+ *             |_|
+ */
+
+function isAdmin(permit) {
+  return Boolean(
+    permit === 'admin' ||
+    permit === 'superadmin' ||
+    permit === 'owner'
+  );
+}
+
+function isSuperadmin(permit) {
+  return Boolean(
+    permit === 'superadmin' ||
+    permit === 'owner'
+  );
+}
+
+function isOwner(permit) {
+  return Boolean(permit === 'owner');
+}
+
+function hasAction(action, suite, permit) {
+  if (!permit) {
+    permit = res.locals.permit;
+  }
+
+  if (permit[suite] === 'all') {
+    return true;
+  }
+
+  if (permit[suite] && permit[suite][action]) {
+    return true;
+  }
+
+  return false;
 }
 
 /*

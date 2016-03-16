@@ -315,7 +315,7 @@ exports.rsop = runOp('rsop', ['username'], 'user');
  * @param {Object} req
  * @param {Object} req.body∥query∥param
  * @param {String} req.body∥query∥param.username
- * @param {user} req.body∥query∥param.user 
+ * @param {user} req.body∥query∥param.user
  * Permissions and groups. Omit username and supply as separate parameter.
  * @param {Object} res
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
@@ -397,7 +397,12 @@ exports.addPermission = runOp(
  * @example
  * h1 #{permitAPI.username} is now an admin!
  */
-exports.setAdmin = runOp('setAdmin', ['username']);
+exports.setAdmin = function(req, res, next) {
+  
+};
+
+// TODO document setSuperadmin
+exports.setSuperadmin = runOp('setSuperadmin', ['username']);
 
 /**
  * Transfer 'owner' to another user. Performs an isOwner check automatically.

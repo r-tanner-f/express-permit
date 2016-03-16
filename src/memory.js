@@ -97,24 +97,6 @@ module.exports = function (expressPermit) {
       callback();
     }
 
-    setAdmin(username, callback) {
-      if (!this.users[username]) {
-        return callback(new this.error.NotFound('User does not exist'));
-      }
-
-      this.users[username].permissions = 'admin';
-      callback();
-    }
-
-    setOwner(username, callback) {
-      if (!this.users[username]) {
-        return callback(new this.error.NotFound('User does not exist'));
-      }
-
-      this.users[username].permissions = 'owner';
-      callback();
-    }
-
   // Permission Operations -----------------------------------------------------
 
     addPermission(username, permission, suite, callback) {

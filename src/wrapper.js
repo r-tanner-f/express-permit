@@ -1,5 +1,6 @@
 'use strict';
 
+
 /*
  *  ____  _               __        __
  * / ___|| |_ ___  _ __ __\ \      / / __ __ _ _ __  _ __   ___ _ __
@@ -9,6 +10,7 @@
  *                                            |_|   |_|
  */
 
+var clone = require('lodash.clonedeep');
 var validate = require('./validation').validateOp;
 
 /**
@@ -17,11 +19,16 @@ var validate = require('./validation').validateOp;
  * @private
  */
 function compilePermissions(user) {
-  var permit = user.permissions;
+  var permit = clone(user.permissions);
 
   // If the user is no groups, is an admin, or is owner,
   // simply return the permissions.
-  if (!user.groups || permit === 'admin' || permit === 'owner') {
+  if (
+    !user.groups             ||
+    user.groups.length === 0 ||
+    permit === 'admin'       ||
+    permit === 'owner'
+  ) {
     return permit;
   }
 
@@ -52,22 +59,6 @@ function compilePermissions(user) {
   }
 
   return permit;
-}
-
-// If no suite is specified, default to 'root'
-function defaultSuite(args) {
-  if (!args.suite) {
-    args.suite = 'root';
-  }
-}
-
-// We will silently fix a missing root suite -- for simplicity's sake
-function fixRoot(permissions) {
-  if (!permissions.root) {
-    permissions.root = {};
-  }
-
-  return permissions;
 }
 
 /**
@@ -223,6 +214,7 @@ class StoreWrapper {
         if (err) {
           return callback(err);
         }
+
         user.permit = compilePermissions(user);
         callback(null, user);
       }),
@@ -343,8 +335,6 @@ class StoreWrapper {
    * });
    */
   addPermission(args, callback) {
-    defaultSuite(args);
-
     this._validateAndRun(
       'addPermission',
       args,
@@ -452,7 +442,7 @@ class StoreWrapper {
       args,
       () => this.store.createGroup(
         args.group,
-        fixRoot(args.permissions),
+        args.permissions,
         callback
       ),
       callback
@@ -503,7 +493,7 @@ class StoreWrapper {
       args,
       () => this.store.updateGroup(
         args.group,
-        fixRoot(args.permissions),
+        args.permissions,
         callback
       ),
       callback

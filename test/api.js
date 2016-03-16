@@ -177,13 +177,12 @@ describe('API', function () {
 
   // Permission Operations -----------------------------------------------------
 
-  it('should add a root permission to a user', function (done) {
+  it('should NOT default suite', function (done) {
     agent
     .get('/addPermission/someUser/add-me')
-    .expect(200)
+    .expect(400)
     .end(function (err) {
       if (err) throw err;
-      expect(someUser.permissions.root['add-me']).to.be.true();
       done();
     });
   });

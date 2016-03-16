@@ -27,6 +27,8 @@ const descriptors = {
 
   setAdmin: ['username'],
 
+  setSuperadmin: ['username'],
+
   setOwner: ['username'],
 
   // Permission Operations -----------------------------------------------------
@@ -84,14 +86,23 @@ const validators = {
       err.push(`Missing permissions: Got ${p}.`);
     }
 
+    if (
+        p === 'admin'      ||
+        p === 'owner'      ||
+        p === 'superadmin'
+    ) { return; }
+
     if (typeof p !== 'object' || Array.isArray(p)) {
-      err.push(`Permissions must be an object. Got ${p}`);
+      err.push(
+        `Permissions must be an object, or one of the following strings:` +
+        ` 'owner', 'superadmin', 'admin'. Got ${p}`
+      );
     }
 
     for (var suite in p) {
       if (typeof p[suite] !== 'object' && p[suite] !== 'all') {
         err.push(`Suites must be objects, or the string 'all'. ` +
-                 `Got a ${typeof p[suite]}.`);
+                 `Got the ${typeof p[suite]} ${p[suite]}.`);
         return err;
       }
 
@@ -148,6 +159,10 @@ const validators = {
 
 // Validate an operation.
 function validateOp(op, args) {
+
+  // FIXME remove what's left of the 'default' garbage
+  // This could be a lot more strict
+  // It's not checking params that aren't part of the operation
 
   // Get our list of parameters from the op descriptors.
   var params = descriptors[op];
