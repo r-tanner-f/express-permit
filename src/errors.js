@@ -36,7 +36,7 @@ exports.Forbidden = class PermissionsError {
     this.name = this.constructor.name;
     this.action  = action;
     this.suite = suite;
-    this.permits = res.locals.permit;
+    this.permits = res.locals.permitAPI.currentUser.permit;
   }
 };
 

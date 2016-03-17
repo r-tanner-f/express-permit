@@ -193,7 +193,7 @@ class StoreWrapper {
   /**
    * Get the resulting set of permissions for a user.
    * The RSOP for the currently logged in user is already available on
-   * <code>res.locals.permit</code>.
+   * <code>res.locals.permitAPI.currentUser.permit</code>.
    * @memberof PermitStore
    * @name rsop
    * @function

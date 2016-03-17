@@ -13,6 +13,15 @@
 
 var StoreWrapper = require('./wrapper');
 
+/*
+ * _____                       _
+ *| ____|_  ___ __   ___  _ __| |_ ___
+ *|  _| \ \/ / '_ \ / _ \| '__| __/ __|
+ *| |___ >  <| |_) | (_) | |  | |_\__ \
+ *|_____/_/\_\ .__/ \___/|_|   \__|___/
+ *           |_|
+ */
+
 /**
  * Express middleware for fine-grained permissions
  * @module express-permit
@@ -61,6 +70,16 @@ module.exports.check.isOwner = isOwnerMiddleware;
  * @public
  */
 function permissions(options) {
+
+  /*
+   * ___       _ _
+   *|_ _|_ __ (_) |_
+   * | || '_ \| | __|
+   * | || | | | | |_
+   *|___|_| |_|_|\__|
+   *
+   */
+
   if (typeof options.username !== 'function') {
     throw new TypeError(
       `express-permit requires a username function. Got ${options.username}.`
@@ -70,33 +89,17 @@ function permissions(options) {
   // Wrap the store for validation.
   var store = new StoreWrapper(options.store);
 
-  // Return middleware for Express to execute on each request.
+  /*
+   * __  __ _     _     _ _
+   *|  \/  (_) __| | __| | | _____      ____ _ _ __ ___
+   *| |\/| | |/ _` |/ _` | |/ _ \ \ /\ / / _` | '__/ _ \
+   *| |  | | | (_| | (_| | |  __/\ V  V / (_| | | |  __/
+   *|_|  |_|_|\__,_|\__,_|_|\___| \_/\_/ \__,_|_|  \___|
+   *
+   *
+   * Return middleware for Express to execute on each request. */
   return function (req, res, next) {
     res.locals.permitAPI = {};
-
-    // local helpers
-
-    function defaultPermit(permit, fn) {
-      if (!permit) { permit = res.locals.permit; }
-
-      return fn(permit);
-    }
-
-    res.locals.permitAPI.hasAction = function (action, suite, permit) {
-      return defaultPermit(permit, permit => hasAction(action, suite, permit));
-    };
-
-    res.locals.permitAPI.isAdmin = function (permit) {
-      return defaultPermit(permit, isAdmin);
-    };
-
-    res.locals.permitAPI.isSuperadmin = function (permit) {
-      return defaultPermit(permit, isSuperadmin);
-    };
-
-    res.locals.permitAPI.isOwner = function (permit) {
-      return defaultPermit(permit, isOwner);
-    };
 
     // Add the store to req for use in another middleware
     req.permitStore = store;
@@ -132,16 +135,94 @@ function permissions(options) {
         );
 
         // Add the permits to the new user's request.
-        res.locals.permit = defaultPermit;
+        res.locals.permitAPI.currentUser = defaultPermit;
 
       } else if (err) {
         return next(err);
       } else {
 
-        // Otherwise, add the user to res.locals.permit
-        res.locals.permit = user.permit;
+        // Otherwise, add the user to res.locals.permitAPI.currentUser.permit
+        res.locals.permitAPI.currentUser = user;
         return next();
       }
+    });
+
+    /*
+     * _                    _   _   _      _
+     *| |    ___   ___ __ _| | | | | | ___| |_ __   ___ _ __ ___
+     *| |   / _ \ / __/ _` | | | |_| |/ _ \ | '_ \ / _ \ '__/ __|
+     *| |__| (_) | (_| (_| | | |  _  |  __/ | |_) |  __/ |  \__ \
+     *|_____\___/ \___\__,_|_| |_| |_|\___|_| .__/ \___|_|  |___/
+     *                                      |_|
+     */
+
+    // This could use some cleaning, but I'm not sure how to do it
+    // The scope is this variable is screwy
+    // And I feel like NONE of this should be here, but somewhere else
+    // but I don't know how to do closure magic otherwise...
+    // var cPermit = res.locals.permitAPI.currentUser;
+
+    res.locals.permit = function (action, suite) {
+      return hasAction(
+        action,
+        suite,
+        res.locals.permitAPI.currentUser.permit
+      );
+    };
+
+    // FIXME yaaay magic numbers...
+    function getLevel(user) {
+      if (user.permit === 'admin') { return 1; }
+
+      if (user.permit === 'superadmin') { return 2; }
+
+      if (user.permit === 'owner') { return 3; }
+
+      return 0;
+    }
+
+    res.locals.permit.isHigherThan = function (user) {
+      if (getLevel(res.locals.permitAPI.currentUser) > getLevel(user)) {
+        return true;
+      }
+
+      return false;
+    };
+
+    res.locals.permit.hasAny = function (suite) {
+
+      // If they're an admin or anything, return true
+      if (
+        res.locals.permitAPI.currentUser.permit === 'admin'      ||
+        res.locals.permitAPI.currentUser.permit === 'superadmin' ||
+        res.locals.permitAPI.currentUser.permit === 'owner'
+      ) { return true; }
+
+      // If they have all in the suite, return true
+      if (res.locals.permitAPI.currentUser.permit[suite] === 'all') {
+        return true;
+      }
+
+      // Loop through all of it to see if there's any
+      for (var action in res.locals.permitAPI.currentUser.permit[suite]) {
+        if (res.locals.permitAPI.currentUser.permit[suite][action] === true) {
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    Object.defineProperty(res.locals.permit, 'isAdmin', {
+      get: () => isAdmin(res.locals.permitAPI.currentUser.permit),
+    });
+
+    Object.defineProperty(res.locals.permit, 'isSuperadmin', {
+      get: () => isSuperadmin(res.locals.permitAPI.currentUser.permit),
+    });
+
+    Object.defineProperty(res.locals.permit, 'isOwner', {
+      get: () => isOwner(res.locals.permitAPI.currentUser.permit),
     });
   };
 }
@@ -195,69 +276,27 @@ function check(action, suite) {
   }
 
   return function permitCheck(req, res, next) {
-    // If for some reason there is no res.locals.permit,
-    // this will prevent goofy errors from happening.
-    if (res.locals.permit) {
-      var permit = res.locals.permit;
 
-      // If owner or admin, permit any action
-      if (permit === 'owner' || permit === 'superadmin' || permit === 'admin') {
-        return next();
+    if (
 
-      /**
-       * If action is explicitly permitted: continue.
-       * @example
-       * var permit = {
-       *   'amusement-park': {
-       *     'go-on-rides': true
-       *   }
-       * }
-       */
-      } else if (permit[suite] && permit[suite][action] === true) {
-        return next();
+      // If for some reason there is no res.locals.permitAPI.currentUser.permit,
+      // this will prevent goofy errors from happening.
+      res.locals.permitAPI.currentUser.permit &&
 
-      /**
-       * If user has 'all' actions AND permission isn't explicitly forbidden
-       * @example
-       * // Permitted
-       * var permit = {
-       *   'amusement-park': {
-       *     all: true,
-       *   }
-       * }
-       * @example
-       * // Not permitted
-       * var permit = {
-       *   'amusement-park': {
-       *     all: true,
-       *     'go-on-rides': false
-       *   }
-       * }
-       */
-      } else if (
-
-        // Suite exists
-        permit[suite] &&
-
-        // All is true
-        permit[suite].all === true &&
-
-        // The permission is NOT explicitly blocked
-        permit[suite][action] !== false
-      ) {
-        return next();
-      }
+      // If the user is allowed to perform this action then next
+      hasAction(action, suite, res.locals.permitAPI.currentUser.permit)
+    ) {
+      return next();
     }
 
-    // If no next() is trigged, pass a Forbidden error the handler
-    // "Implicit-deny" in a way
+    // Otherwise, pass a Forbidden to the error handler
     var err = new errors.Forbidden(res, action, suite);
     next(err);
   };
 }
 
 function isAdminMiddleware(req, res, next) {
-  if (isAdmin(res.locals.permit)) {
+  if (isAdmin(res.locals.permitAPI.currentUser.permit)) {
     return next();
   }
 
@@ -265,7 +304,7 @@ function isAdminMiddleware(req, res, next) {
 }
 
 function isSuperadminMiddleware(req, res, next) {
-  if (isSuperadmin(res.locals.permit)) {
+  if (isSuperadmin(res.locals.permitAPI.currentUser.permit)) {
     return next();
   }
 
@@ -273,7 +312,7 @@ function isSuperadminMiddleware(req, res, next) {
 }
 
 function isOwnerMiddleware(req, res, next) {
-  if (isOwner(res.locals.permit)) {
+  if (isOwner(res.locals.permitAPI.currentUser.permit)) {
     return next();
   }
 
@@ -326,15 +365,51 @@ function isOwner(permit) {
 }
 
 function hasAction(action, suite, permit) {
-  if (!permit) {
-    permit = res.locals.permit;
-  }
-
-  if (permit[suite] === 'all') {
+  // If owner, admin, or superadmin, then permit any action
+  if (permit === 'owner' || permit === 'superadmin' || permit === 'admin') {
     return true;
-  }
 
-  if (permit[suite] && permit[suite][action]) {
+  /**
+   * If action is explicitly permitted: continue.
+   * @example
+   * var permit = {
+   *   'amusement-park': {
+   *     'go-on-rides': true
+   *   }
+   * }
+   */
+  } else if (permit[suite] && permit[suite][action] === true) {
+    return true;
+
+  /**
+   * If user has 'all' actions AND permission isn't explicitly forbidden
+   * @example
+   * // Permitted
+   * var permit = {
+   *   'amusement-park': {
+   *     all: true,
+   *   }
+   * }
+   * @example
+   * // Not permitted
+   * var permit = {
+   *   'amusement-park': {
+   *     all: true,
+   *     'go-on-rides': false
+   *   }
+   * }
+   */
+  } else if (
+
+    // Suite exists
+    permit[suite] &&
+
+    // All is true
+    permit[suite].all === true &&
+
+    // The permission is NOT explicitly blocked
+    permit[suite][action] !== false
+  ) {
     return true;
   }
 

@@ -65,7 +65,10 @@ describe('Error handling:', function () {
       );
 
       expect(validators.permissions({ bad: 'whoops' })).to.deep.equal(
-        ['Suites must be objects, or the string \'all\'. Got a string.']
+        [
+          'Suites must be objects, or the string \'all\'. ' +
+          'Got the string whoops.',
+        ]
       );
     });
 
