@@ -23,6 +23,8 @@ const descriptors = {
 
   update: ['username', 'user'],
 
+  updatePermissions: ['username', 'permissions'],
+
   destroy: ['username'],
 
   setAdmin: ['username'],

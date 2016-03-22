@@ -338,6 +338,11 @@ exports.rsop = runOp('rsop', ['username'], 'user');
  */
 exports.update = runOp('update', ['username', 'user']);
 
+// TODO document me
+exports.updatePermissions = runOp(
+  'updatePermissions', ['username', 'permissions']
+);
+
 /**
  * Delete a user
  * @function

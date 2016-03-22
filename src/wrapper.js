@@ -27,6 +27,7 @@ function compilePermissions(user) {
     !user.groups             ||
     user.groups.length === 0 ||
     permit === 'admin'       ||
+    permit === 'superadmin'  ||
     permit === 'owner'
   ) {
     return permit;
@@ -243,6 +244,20 @@ class StoreWrapper {
       'update',
       args,
       () => this.store.update(args.username, args.user, callback),
+      callback
+    );
+  }
+
+  // TODO document me
+  updatePermissions(args, callback) {
+    this._validateAndRun(
+      'updatePermissions',
+      args,
+      () => this.store.updatePermissions(
+        args.username,
+        args.permissions,
+       callback
+      ),
       callback
     );
   }
