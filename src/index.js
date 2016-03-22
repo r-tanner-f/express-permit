@@ -130,13 +130,16 @@ function permissions(options) {
           function (err) {
             if (err) {return next(err);}
 
-            return next();
+            // Load the new user (kinda clunky...)
+            store.rsop({ username: username }, function (err, user) {
+              if (err) {return next(err);}
+
+              res.locals.permitAPI.currentUser = user;
+
+              return next();
+            });
           }
         );
-
-        // Add the permits to the new user's request.
-        res.locals.permitAPI.currentUser = defaultPermit;
-
       } else if (err) {
         return next(err);
       } else {
@@ -366,6 +369,10 @@ function isOwner(permit) {
 }
 
 function hasAction(action, suite, permit) {
+  if (!permit) {
+    return false;
+  }
+
   // If owner, admin, or superadmin, then permit any action
   if (permit === 'owner' || permit === 'superadmin' || permit === 'admin') {
     return true;

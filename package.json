@@ -1,6 +1,6 @@
 {
-  "name": "express-permit",
-  "version": "1.0.0",
+  "name": "@orchardcorset/express-permit",
+  "version": "1.0.5",
   "description": "Easy permission handling and labeling",
   "main": "index.js",
   "scripts": {
