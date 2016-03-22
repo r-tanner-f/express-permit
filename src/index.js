@@ -162,11 +162,11 @@ function permissions(options) {
     // but I don't know how to do closure magic otherwise...
     // var cPermit = res.locals.permitAPI.currentUser;
 
-    res.locals.permit = function (action, suite) {
+    res.locals.permit = function (action, suite, permissions) {
       return hasAction(
         action,
         suite,
-        res.locals.permitAPI.currentUser.permit
+        permissions || res.locals.permitAPI.currentUser.permit
       );
     };
 
@@ -213,6 +213,7 @@ function permissions(options) {
       return false;
     };
 
+    // Do these need to be getters? I guess it does prevent setting...
     Object.defineProperty(res.locals.permit, 'isAdmin', {
       get: () => isAdmin(res.locals.permitAPI.currentUser.permit),
     });
