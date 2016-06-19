@@ -8,7 +8,7 @@
  *|_____|_|  |_|  \___/|_|     \____|_|\__,_|___/___/\___||___/
  */
 
-var flatten = require('lodash.flattendeep');
+const flatten = require('lodash.flattendeep');
 
 exports.NotFound = class NotFoundError {
   constructor(message) {
@@ -52,9 +52,7 @@ exports.BadRequest = class BadRequest {
     err = flatten(err);
 
     // Remove all falsey values from array
-    err = err.filter(function (e) {
-      return Boolean(e);
-    });
+    err = err.filter(e => Boolean(e));
 
     if (err.length === 1) {
       this.message = err[0];
@@ -66,6 +64,6 @@ exports.BadRequest = class BadRequest {
   }
 
   toString() {
-    return 'ValidationError -- ' + (this.details || this.message);
+    return `ValidationError -- ${this.details || this.message}`;
   }
 };

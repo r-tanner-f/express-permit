@@ -9,9 +9,9 @@
  *                                  |___/
  */
 
-var clone = require('lodash.clonedeep');
+const clone = require('lodash.clonedeep');
 
-module.exports = function (expressPermit) {
+module.exports = function memoryStore(expressPermit) {
   const Store = expressPermit.Store;
 
   class MemoryPermitStore extends Store {
@@ -37,12 +37,12 @@ module.exports = function (expressPermit) {
   // readAll ===================================================================
 
     readAll(callback) {
-      var users = clone(this.users);
+      const users = clone(this.users);
       return callback(null, users);
     }
 
     readAllGroups(callback) {
-      var groups = clone(this.groups);
+      const groups = clone(this.groups);
       callback(null, groups);
     }
 
@@ -55,7 +55,7 @@ module.exports = function (expressPermit) {
       }
 
       this.users[username] = permit;
-      callback();
+      return callback();
     }
 
     read(username, callback) {
@@ -63,19 +63,19 @@ module.exports = function (expressPermit) {
         return callback(new this.error.NotFound('User does not exist'));
       }
 
-      var user = clone(this.users[username]);
-      callback(null, user);
+      const user = clone(this.users[username]);
+      return callback(null, user);
     }
 
     rsop(username, callback) {
       this.read(username, (err, user) => {
-        if (err) {return callback(err);}
+        if (err) { return callback(err); }
 
         if (user.groups) {
           user.groupPermissions = user.groups.map(group => this.groups[group]);
         }
 
-        callback(null, user);
+        return callback(null, user);
       });
     }
 
@@ -85,7 +85,7 @@ module.exports = function (expressPermit) {
       }
 
       this.users[username] = permit;
-      callback();
+      return callback();
     }
 
     destroy(username, callback) {
@@ -94,7 +94,7 @@ module.exports = function (expressPermit) {
       }
 
       delete this.users[username];
-      callback();
+      return callback();
     }
 
   // Permission Operations -----------------------------------------------------
@@ -109,7 +109,7 @@ module.exports = function (expressPermit) {
       }
 
       this.users[username].permissions[suite][permission] = true;
-      callback();
+      return callback();
     }
 
   // Group Operations ----------------------------------------------------------
@@ -128,7 +128,7 @@ module.exports = function (expressPermit) {
       }
 
       this.users[username].groups.push(group);
-      callback();
+      return callback();
     }
 
     removeGroup(username, group, callback) {
@@ -143,11 +143,9 @@ module.exports = function (expressPermit) {
       }
 
       this.users[username].groups = this.users[username].groups.filter(
-        function (g) {
-          return g !== group;
-        }
+          g => g !== group
       );
-      callback();
+      return callback();
     }
 
     updateGroups(username, groups, callback) {
@@ -156,7 +154,7 @@ module.exports = function (expressPermit) {
       }
 
       this.users[username].groups = groups;
-      callback();
+      return callback();
     }
 
   // Groups ====================================================================
@@ -168,7 +166,7 @@ module.exports = function (expressPermit) {
       }
 
       this.groups[group] = permissions;
-      callback();
+      return callback();
     }
 
     readGroup(group, callback) {
@@ -178,7 +176,7 @@ module.exports = function (expressPermit) {
 
       group = clone(this.groups[group]);
 
-      callback(null, group);
+      return callback(null, group);
     }
 
     updateGroup(group, permissions, callback) {
@@ -187,7 +185,7 @@ module.exports = function (expressPermit) {
       }
 
       this.groups[group] = permissions;
-      callback();
+      return callback();
     }
 
     destroyGroup(group, callback) {
@@ -196,7 +194,7 @@ module.exports = function (expressPermit) {
       }
 
       delete this.groups[group];
-      callback();
+      return callback();
     }
   }
 

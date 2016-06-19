@@ -10,8 +10,8 @@
  *                                            |_|   |_|
  */
 
-var clone = require('lodash.clonedeep');
-var validate = require('./validation').validateOp;
+const clone = require('lodash.clonedeep');
+const validate = require('./validation').validateOp;
 
 /**
  * Compile a user's permission.
@@ -19,7 +19,7 @@ var validate = require('./validation').validateOp;
  * @private
  */
 function compilePermissions(user) {
-  var permit = clone(user.permissions);
+  const permit = clone(user.permissions);
 
   // If the user is no groups, is an admin, or is owner,
   // simply return the permissions.
@@ -34,13 +34,12 @@ function compilePermissions(user) {
   }
 
   // Otherwise, loop through
-  for (var i = 0; i < user.groupPermissions.length; i++) {
-    let group = user.groupPermissions[i];
+  for (let i = 0; i < user.groupPermissions.length; i++) {
+    const group = user.groupPermissions[i];
 
-    for (let suite in group) {
-
+    for (const suite in group) {
       // If user has no permissions in suite, initialize suite
-      if (!permit[suite]) {permit[suite] = {};}
+      if (!permit[suite]) { permit[suite] = {}; }
 
       // If user already has 'all' permissions in suite or the group sets 'all'
       // Set permissions in suite to 'all' and continue
@@ -49,8 +48,7 @@ function compilePermissions(user) {
         continue;
       }
 
-      for (let action in group[suite]) {
-
+      for (const action in group[suite]) {
         // If the current action is not false, set it to the group's value
         if (permit[suite][action] !== false) {
           permit[suite][action] = group[suite][action];
@@ -94,12 +92,12 @@ class StoreWrapper {
       throw new Error('Callback is required');
     }
 
-    var err = validate(opname, args);
+    const err = validate(opname, args);
     if (err) {
       return callback(err);
     }
 
-    this._defer(op);
+    return this._defer(op);
   }
 
   // readAll ===================================================================
@@ -136,9 +134,7 @@ class StoreWrapper {
    */
   readAllGroups(callback) {
     this._defer(() => {
-      this.store.readAllGroups(function (err, result) {
-        callback(err, result);
-      });
+      this.store.readAllGroups(callback);
     });
   }
 
@@ -211,13 +207,13 @@ class StoreWrapper {
     this._validateAndRun(
       'rsop',
       args,
-      () => this.store.rsop(args.username, function (err, user) {
+      () => this.store.rsop(args.username, (err, user) => {
         if (err) {
           return callback(err);
         }
 
         user.permit = compilePermissions(user);
-        callback(null, user);
+        return callback(null, user);
       }),
 
       callback
@@ -344,9 +340,11 @@ class StoreWrapper {
    * @param {Function} callback
    * @example
    * app.get('/user/:username/addPermission/:suite?/:permission', function (req, res, next) {
-   *   req.permitStore.addPermission(req.param.username, req.param.permission, req.param.suite, function (err, result) {
-   *      res.render('confirmation', {result: result});
-   *   });
+   *   req.permitStore.addPermission(
+   *     req.param.username, req.param.permission, req.param.suite, function (err, result) {
+   *       res.render('confirmation', {result: result});
+   *     }
+   *   );
    * });
    */
   addPermission(args, callback) {

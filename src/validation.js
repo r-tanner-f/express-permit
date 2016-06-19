@@ -8,6 +8,8 @@
  *   \_/ \__,_|_|_|\__,_|\__,_|\__|_|\___/|_| |_|
  */
 
+/* eslint consistent-return: 'off', no-confusing-arrow: 'off' */
+
 const flatten = require('lodash.flattendeep');
 const BadRequest = require('./errors').BadRequest;
 
@@ -80,10 +82,10 @@ const validators = {
 
   group: g => typeof g === 'string' ? null : `Group must be a string. Got ${g}`,
 
-  groups: g=> Array.isArray(g) ? null : `Groups must be an array. Got ${g}`,
+  groups: g => Array.isArray(g) ? null : `Groups must be an array. Got ${g}`,
 
-  permissions: function (p) {
-    var err = [];
+  permissions: p => {
+    const err = [];
     if (!p) {
       err.push(`Missing permissions: Got ${p}.`);
     }
@@ -96,14 +98,14 @@ const validators = {
 
     if (typeof p !== 'object' || Array.isArray(p)) {
       err.push(
-        `Permissions must be an object, or one of the following strings:` +
+        'Permissions must be an object, or one of the following strings:' +
         ` 'owner', 'superadmin', 'admin'. Got ${p}`
       );
     }
 
-    for (var suite in p) {
+    for (const suite in p) {
       if (typeof p[suite] !== 'object' && p[suite] !== 'all') {
-        err.push(`Suites must be objects, or the string 'all'. ` +
+        err.push('Suites must be objects, or the string \'all\'. ' +
                  `Got the ${typeof p[suite]} ${p[suite]}.`);
         return err;
       }
@@ -113,31 +115,30 @@ const validators = {
         return err;
       }
 
-      for (var permission in p[suite]) {
-        var notValid = validators.permissionKeyValue(p[suite][permission]);
+      for (const permission in p[suite]) {
+        const notValid = validators.permissionKeyValue(p[suite][permission]);
         if (notValid) {
-          err.push(`Bad permission key/value pair. ` +
+          err.push('Bad permission key/value pair. ' +
                    `Got ${p[suite][permission]}`);
         }
       }
     }
 
     if (err.length > 0) { return err; }
-
   },
 
   permissionKeyValue: p =>
     typeof p === 'boolean' ? null :
     `Permission key/value pair must be boolean. Got ${p}`,
 
-  user: function (u) {
-    var err = [];
+  user: u => {
+    const err = [];
     if (!u) {
       err.push(`Missing user: Got ${u}.`);
       return err;
     }
 
-    var pErrs = validators.permissions(u.permissions);
+    const pErrs = validators.permissions(u.permissions);
     if (pErrs) {
       err.push(pErrs);
     }
@@ -146,7 +147,7 @@ const validators = {
       err.push(`Groups must be an array (can be empty) Got ${u.groups}.`);
     }
 
-    for (var key in u) {
+    for (const key in u) {
       if (key !== 'permissions' && key !== 'groups') {
         err.push(`Unknown key in permission. Got: ${key}. ` +
                  'Only "permissions" and "groups" allowed');
@@ -161,34 +162,28 @@ const validators = {
 
 // Validate an operation.
 function validateOp(op, args) {
-
-  // FIXME remove what's left of the 'default' garbage
   // This could be a lot more strict
   // It's not checking params that aren't part of the operation
 
   // Get our list of parameters from the op descriptors.
-  var params = descriptors[op];
+  const params = descriptors[op];
 
-  var err = [];
+  let err = [];
 
   // Iterate over each param we need
-  params.forEach(function (param) {
+  params.forEach(param  => {
     // If we don't have the required param then create an error string.
     if (!args[param]) {
       err.push(`Missing required parameter: ${param}`);
     } else {
       err.push(validators[param](args[param]));
     }
-
   });
-
   // Certain validators return an array; flatten these.
   err = flatten(err);
 
   // Remove all falsey values from array -- validators return null if no err.
-  err = err.filter(function (e) {
-    return Boolean(e);
-  });
+  err = err.filter(e => Boolean(e));
 
   // If we have any errs, wrap them in a ValidationError and return.
   if (err.length) {

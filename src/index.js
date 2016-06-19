@@ -8,49 +8,185 @@
  *          |_|                           |_|
  *
  * This file is the starting point that exposes the module.
- * It contains the primary piece of middleware loaded by Express: 'permissions'.
+ * It contains the primary piece of middleware loaded by Express.
  */
 
-var StoreWrapper = require('./wrapper');
+const StoreWrapper = require('./wrapper');
+const errors = require('./errors');
+const api = require('./api');
 
 /*
- * _____                       _
- *| ____|_  ___ __   ___  _ __| |_ ___
- *|  _| \ \/ / '_ \ / _ \| '__| __/ __|
- *| |___ >  <| |_) | (_) | |  | |_\__ \
- *|_____/_/\_\ .__/ \___/|_|   \__|___/
- *           |_|
+ * _   _      _
+ *| | | | ___| |_ __   ___ _ __ ___
+ *| |_| |/ _ \ | '_ \ / _ \ '__/ __|
+ *|  _  |  __/ | |_) |  __/ |  \__ \
+ *|_| |_|\___|_| .__/ \___|_|  |___/
+ *             |_|
  */
 
-/**
- * Express middleware for fine-grained permissions
- * @module express-permit
+function isAdmin(permit) {
+  return Boolean(
+    permit === 'admin'      ||
+    permit === 'superadmin' ||
+    permit === 'owner'
+  );
+}
+
+function isSuperadmin(permit) {
+  return Boolean(
+    permit === 'superadmin' ||
+    permit === 'owner'
+  );
+}
+
+function isOwner(permit) {
+  return Boolean(permit === 'owner');
+}
+
+const userLevel = {
+  user: 0,
+  admin: 1,
+  superadmin: 2,
+  owner: 3,
+};
+function getLevel(user) {
+  if (userLevel[user.permit]) { return userLevel[user.permit]; }
+  return userLevel.user;
+}
+
+function hasAction(action, suite, permit) {
+  if (!permit) {
+     return false;
+ }
+
+  // If owner, admin, or superadmin, then permit any action
+  if (permit === 'owner' || permit === 'superadmin' || permit === 'admin') {
+    return true;
+
+  /**
+   * If action is explicitly permitted: continue.
+   * @example
+   * const permit = {
+   *   'amusement-park': {
+   *     'go-on-rides': true
+   *   }
+   * }
+   */
+  } else if (permit[suite] && permit[suite][action] === true) {
+    return true;
+
+  /**
+   * If user has 'all' actions AND permission isn't explicitly forbidden
+   * @example
+   * // Permitted
+   * const permit = {
+   *   'amusement-park': {
+   *     all: true,
+   *   }
+   * }
+   * @example
+   * // Not permitted
+   * const permit = {
+   *   'amusement-park': {
+   *     all: true,
+   *     'go-on-rides': false
+   *   }
+   * }
+   */
+  } else if (
+
+    // Suite exists
+    permit[suite] &&
+
+    // All is true
+    permit[suite].all === true &&
+
+    // The permission is NOT explicitly blocked
+    permit[suite][action] !== false
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/*
+ * ____             _   _      _
+ *|  _ \ ___  ___  | | | | ___| |_ __   ___ _ __ ___
+ *| |_) / _ \/ __| | |_| |/ _ \ | '_ \ / _ \ '__/ __|
+ *|  _ <  __/\__ \ |  _  |  __/ | |_) |  __/ |  \__ \
+ *|_| \_\___||___/ |_| |_|\___|_| .__/ \___|_|  |___/
+ *                              |_|
  */
-module.exports = permissions;
+function addLocalHelpers(res) {
+  res.locals.permit = function hasActionMiddleware(action, suite, permissions) {
+    return hasAction(
+      action,
+      suite,
+      permissions || res.locals.permitAPI.currentUser.permit
+    );
+  };
 
-var errors = require('./errors');
-module.exports.error = errors;
 
-var api = require('./api');
-module.exports.api = api;
+  res.locals.permit.isHigherThan = function isHigherThan(user) {
+    if (getLevel(res.locals.permitAPI.currentUser) > getLevel(user)) {
+      return true;
+    }
 
-module.exports.Store = require('./store');
-module.exports.MemoryPermitStore = require('./memory');
-module.exports._wrapper = StoreWrapper;
+    return false;
+  };
 
-module.exports.tag = tag;
+  res.locals.permit.hasAny = function hasAny(suite) {
+    // If they're an admin or anything, return true
+    if (
+      res.locals.permitAPI.currentUser.permit === 'admin'      ||
+      res.locals.permitAPI.currentUser.permit === 'superadmin' ||
+      res.locals.permitAPI.currentUser.permit === 'owner'
+    ) { return true; }
 
-module.exports.check = check;
+    // If they have all in the suite, return true
+    if (res.locals.permitAPI.currentUser.permit[suite] === 'all') {
+      return true;
+    }
 
-module.exports.check.isAdmin = isAdminMiddleware;
-module.exports.check.isSuperadmin = isSuperadminMiddleware;
-module.exports.check.isOwner = isOwnerMiddleware;
+    // Loop through all of it to see if there's any
+    for (const action in res.locals.permitAPI.currentUser.permit[suite]) {
+      if (res.locals.permitAPI.currentUser.permit[suite][action] === true) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  // Do these need to be getters? I guess it does prevent setting...
+  Object.defineProperty(res.locals.permit, 'isAdmin', {
+    get: () => isAdmin(res.locals.permitAPI.currentUser.permit),
+  });
+
+  Object.defineProperty(res.locals.permit, 'isSuperadmin', {
+    get: () => isSuperadmin(res.locals.permitAPI.currentUser.permit),
+  });
+
+  Object.defineProperty(res.locals.permit, 'isOwner', {
+    get: () => isOwner(res.locals.permitAPI.currentUser.permit),
+  });
+}
+
+/*
+ * ___       _ _
+ *|_ _|_ __ (_) |_
+ * | || '_ \| | __|
+ * | || | | | | |_
+ *|___|_| |_|_|\__|
+ *
+ */
 
 /**
  * Configure express-permit middleware for handling and retrieving permissions.
  * Provide a permit store and a username function.
  * @example
- * var permissions = require('express-permit');
+ * const permissions = require('express-permit');
  *
  * app.use(permissions({
  *  store: MemoryPermitStore(),
@@ -69,17 +205,7 @@ module.exports.check.isOwner = isOwnerMiddleware;
  * @static
  * @public
  */
-function permissions(options) {
-
-  /*
-   * ___       _ _
-   *|_ _|_ __ (_) |_
-   * | || '_ \| | __|
-   * | || | | | | |_
-   *|___|_| |_|_|\__|
-   *
-   */
-
+function expressPermit(options) {
   if (typeof options.username !== 'function') {
     throw new TypeError(
       `express-permit requires a username function. Got ${options.username}.`
@@ -87,7 +213,7 @@ function permissions(options) {
   }
 
   // Wrap the store for validation.
-  var store = new StoreWrapper(options.store);
+  const store = new StoreWrapper(options.store);
 
   /*
    * __  __ _     _     _ _
@@ -98,43 +224,44 @@ function permissions(options) {
    *
    *
    * Return middleware for Express to execute on each request. */
-  return function (req, res, next) {
+  return function expressPermitMiddleware(req, res, next) {
     res.locals.permitAPI = {};
 
     // Add the store to req for use in another middleware
     req.permitStore = store;
 
     // Execute the supplied username function to retrieve the username.
-    var username = options.username(req);
+    const username = options.username(req);
 
-    // If the user is not logged on, `next();` without adding permissions.
+    // If the user is not logged in, call `next();` without adding permissions.
     if (!username) {
-      return next();
+      next();
+      return;
     }
 
-    // Attempt to retrieve the user's permit
-    store.rsop({ username: username }, function (err, user) {
+    addLocalHelpers(res);
 
+    // Attempt to retrieve the user's permit
+    store.rsop({ username }, (err, user) => {
       // If no permissions are found for this user...
       if (err instanceof options.store.error.NotFound) {
-
         // then build defaults
-        var defaultPermit = options.defaultPermit || {
+        const defaultPermit = options.defaultPermit || {
           permissions: {},
           groups: ['default'],
         };
 
         // and create the user.
         store.create(
-          { username: username, user: defaultPermit },
-          function (err) {
-            if (err) {return next(err);}
+          { username, user: defaultPermit },
+          createErr => {
+            if (createErr) { return next(createErr); }
 
             // Load the new user (kinda clunky...)
-            store.rsop({ username: username }, function (err, user) {
-              if (err) {return next(err);}
+            return store.rsop({ username }, (rsopErr, rsopUser) => {
+              if (rsopErr) { return next(rsopErr); }
 
-              res.locals.permitAPI.currentUser = user;
+              res.locals.permitAPI.currentUser = rsopUser;
 
               return next();
             });
@@ -142,94 +269,15 @@ function permissions(options) {
         );
       } else if (err) {
         return next(err);
-      } else {
-
-        // Otherwise, add the user to res.locals.permitAPI.currentUser.permit
-        res.locals.permitAPI.currentUser = user;
-        return next();
-      }
-    });
-
-    /*
-     * _                    _   _   _      _
-     *| |    ___   ___ __ _| | | | | | ___| |_ __   ___ _ __ ___
-     *| |   / _ \ / __/ _` | | | |_| |/ _ \ | '_ \ / _ \ '__/ __|
-     *| |__| (_) | (_| (_| | | |  _  |  __/ | |_) |  __/ |  \__ \
-     *|_____\___/ \___\__,_|_| |_| |_|\___|_| .__/ \___|_|  |___/
-     *                                      |_|
-     */
-
-    // This could use some cleaning, but I'm not sure how to do it
-    // The scope is this variable is screwy
-    // And I feel like NONE of this should be here, but somewhere else
-    // but I don't know how to do closure magic otherwise...
-    // var cPermit = res.locals.permitAPI.currentUser;
-
-    res.locals.permit = function (action, suite, permissions) {
-      return hasAction(
-        action,
-        suite,
-        permissions || res.locals.permitAPI.currentUser.permit
-      );
-    };
-
-    // FIXME yaaay magic numbers...
-    function getLevel(user) {
-      if (user.permit === 'admin') { return 1; }
-
-      if (user.permit === 'superadmin') { return 2; }
-
-      if (user.permit === 'owner') { return 3; }
-
-      return 0;
-    }
-
-    res.locals.permit.isHigherThan = function (user) {
-      if (getLevel(res.locals.permitAPI.currentUser) > getLevel(user)) {
-        return true;
       }
 
-      return false;
-    };
-
-    res.locals.permit.hasAny = function (suite) {
-
-      // If they're an admin or anything, return true
-      if (
-        res.locals.permitAPI.currentUser.permit === 'admin'      ||
-        res.locals.permitAPI.currentUser.permit === 'superadmin' ||
-        res.locals.permitAPI.currentUser.permit === 'owner'
-      ) { return true; }
-
-      // If they have all in the suite, return true
-      if (res.locals.permitAPI.currentUser.permit[suite] === 'all') {
-        return true;
-      }
-
-      // Loop through all of it to see if there's any
-      for (var action in res.locals.permitAPI.currentUser.permit[suite]) {
-        if (res.locals.permitAPI.currentUser.permit[suite][action] === true) {
-          return true;
-        }
-      }
-
-      return false;
-    };
-
-    // Do these need to be getters? I guess it does prevent setting...
-    Object.defineProperty(res.locals.permit, 'isAdmin', {
-      get: () => isAdmin(res.locals.permitAPI.currentUser.permit),
-    });
-
-    Object.defineProperty(res.locals.permit, 'isSuperadmin', {
-      get: () => isSuperadmin(res.locals.permitAPI.currentUser.permit),
-    });
-
-    Object.defineProperty(res.locals.permit, 'isOwner', {
-      get: () => isOwner(res.locals.permitAPI.currentUser.permit),
+      // Otherwise, add the user to res.locals.permitAPI.currentUser.permit
+      res.locals.permitAPI.currentUser = user;
+      return next();
     });
   };
 }
+
 
 /*
  * _____                                 _    ____ _               _
@@ -269,9 +317,8 @@ function permissions(options) {
  * });
  */
 function check(action, suite) {
-
-  //Add to tracking
-  var map = api.map;
+  // Add to tracking
+  const map = api.map;
 
   if (!map.has(suite)) {
     map.set(suite, new Set([action]));
@@ -280,13 +327,10 @@ function check(action, suite) {
   }
 
   return function permitCheck(req, res, next) {
-
+    // If for some reason there is no res.locals.permitAPI.currentUser.permit,
+    // this will prevent goofy errors from happening.
     if (
-
-      // If for some reason there is no res.locals.permitAPI.currentUser.permit,
-      // this will prevent goofy errors from happening.
       res.locals.permitAPI.currentUser.permit &&
-
       // If the user is allowed to perform this action then next
       hasAction(action, suite, res.locals.permitAPI.currentUser.permit)
     ) {
@@ -294,8 +338,8 @@ function check(action, suite) {
     }
 
     // Otherwise, pass a Forbidden to the error handler
-    var err = new errors.Forbidden(res, action, suite);
-    next(err);
+    const err = new errors.Forbidden(res, action, suite);
+    return next(err);
   };
 }
 
@@ -304,7 +348,7 @@ function isAdminMiddleware(req, res, next) {
     return next();
   }
 
-  next(new errors.Forbidden(res, 'admin', 'is'));
+  return next(new errors.Forbidden(res, 'admin', 'is'));
 }
 
 function isSuperadminMiddleware(req, res, next) {
@@ -312,7 +356,7 @@ function isSuperadminMiddleware(req, res, next) {
     return next();
   }
 
-  next(new errors.Forbidden(res, 'superadmin', 'is'));
+  return next(new errors.Forbidden(res, 'superadmin', 'is'));
 }
 
 function isOwnerMiddleware(req, res, next) {
@@ -320,7 +364,7 @@ function isOwnerMiddleware(req, res, next) {
     return next();
   }
 
-  next(new errors.Forbidden(res, 'owner', 'is'));
+  return next(new errors.Forbidden(res, 'owner', 'is'));
 }
 
 /**
@@ -328,101 +372,47 @@ function isOwnerMiddleware(req, res, next) {
  * Used for setting a default suite.
  * @example
  * var app    = Express.Router();
- * var permit = require('express-permit').tag('amusement');
+ * const permit = require('express-permit').tag('amusement');
  *
  * app.get('/rollercoaster', permit('go-on-rides'), function(req, res, next) {
  *   res.send('wheee!');
  * }):
  */
 function tag(suite) {
-  return function (action) {
-    return check(action, suite);
-  };
+  return action => check(action, suite);
 }
+
 
 /*
- * _   _      _
- *| | | | ___| |_ __   ___ _ __ ___
- *| |_| |/ _ \ | '_ \ / _ \ '__/ __|
- *|  _  |  __/ | |_) |  __/ |  \__ \
- *|_| |_|\___|_| .__/ \___|_|  |___/
- *             |_|
+ * _____                       _
+ *| ____|_  ___ __   ___  _ __| |_ ___
+ *|  _| \ \/ / '_ \ / _ \| '__| __/ __|
+ *| |___ >  <| |_) | (_) | |  | |_\__ \
+ *|_____/_/\_\ .__/ \___/|_|   \__|___/
+ *           |_|
  */
 
-function isAdmin(permit) {
-  return Boolean(
-    permit === 'admin' ||
-    permit === 'superadmin' ||
-    permit === 'owner'
-  );
-}
+/**
+ * Express middleware for fine-grained permissions
+ * @module express-permit
+ */
+module.exports = expressPermit;
 
-function isSuperadmin(permit) {
-  return Boolean(
-    permit === 'superadmin' ||
-    permit === 'owner'
-  );
-}
+module.exports.error = errors;
 
-function isOwner(permit) {
-  return Boolean(permit === 'owner');
-}
+module.exports.api = api;
 
-function hasAction(action, suite, permit) {
-  if (!permit) {
-    return false;
-  }
+module.exports.Store = require('./store');
+module.exports.MemoryPermitStore = require('./memory');
+module.exports._wrapper = StoreWrapper;
 
-  // If owner, admin, or superadmin, then permit any action
-  if (permit === 'owner' || permit === 'superadmin' || permit === 'admin') {
-    return true;
+module.exports.tag = tag;
 
-  /**
-   * If action is explicitly permitted: continue.
-   * @example
-   * var permit = {
-   *   'amusement-park': {
-   *     'go-on-rides': true
-   *   }
-   * }
-   */
-  } else if (permit[suite] && permit[suite][action] === true) {
-    return true;
+module.exports.check = check;
 
-  /**
-   * If user has 'all' actions AND permission isn't explicitly forbidden
-   * @example
-   * // Permitted
-   * var permit = {
-   *   'amusement-park': {
-   *     all: true,
-   *   }
-   * }
-   * @example
-   * // Not permitted
-   * var permit = {
-   *   'amusement-park': {
-   *     all: true,
-   *     'go-on-rides': false
-   *   }
-   * }
-   */
-  } else if (
-
-    // Suite exists
-    permit[suite] &&
-
-    // All is true
-    permit[suite].all === true &&
-
-    // The permission is NOT explicitly blocked
-    permit[suite][action] !== false
-  ) {
-    return true;
-  }
-
-  return false;
-}
+module.exports.check.isAdmin = isAdminMiddleware;
+module.exports.check.isSuperadmin = isSuperadminMiddleware;
+module.exports.check.isOwner = isOwnerMiddleware;
 
 /*
  * _                        _       __
@@ -446,7 +436,7 @@ function hasAction(action, suite, permit) {
  * @property {permit} [permit]
  * A compiled set of permissions, including permissions inherited from groups.
  * @example
- * var user = {
+ * const user = {
  *   username: 'awesomeUser',
  *   permissions: {
  *     root: {
@@ -459,9 +449,9 @@ function hasAction(action, suite, permit) {
  *   groups: [ 'customer' ]
  * }
  * @example
- * var user = 'admin'
+ * const user = 'admin'
  * @example
- * var user = 'owner'
+ * const user = 'owner'
  */
 
 /**
@@ -473,7 +463,7 @@ function hasAction(action, suite, permit) {
  * @property {...suite} suites
  * @example
  *
- * var permissions = {
+ * let permissions = {
  *   root: {
  *     'enter-park': true
  *   },
@@ -492,7 +482,7 @@ function hasAction(action, suite, permit) {
  * @typedef {Object} permissions
  * @property {...suite} suites
  * @example
- * var permissions = {
+ * let permissions = {
  *   root: {
  *     'enter-park': true
  *   },
@@ -512,12 +502,12 @@ function hasAction(action, suite, permit) {
  * The string 'all' allows permission to every action under the suite
  * @property {...boolean} actions
  * @example
- * var suite = {
+ * let suite = {
  *   'enter-park': true,
  *   'go-on-rides': true
  * }
  * @example
- * var suite = 'all'
+ * let suite = 'all'
  */
 
 /**
@@ -527,7 +517,7 @@ function hasAction(action, suite, permit) {
  * @typedef {object} group
  * @property {permissions} permissions
  * @example
- * var group = {
+ * let group = {
  *   root: {
  *     'enter-park': true
  *   },
@@ -537,3 +527,4 @@ function hasAction(action, suite, permit) {
  *   'basic-things': 'all'
  * }
  */
+

@@ -24,11 +24,10 @@
 function runOp(op, params, api) {
   api = api || 'result';
 
-  return function (req, res, next) {
-    var args = {};
+  return function expressPermitOperationMiddleware(req, res, next) {
+    const args = {};
 
-    params.forEach(function (param) {
-
+    params.forEach(param => {
       // Check for parameter in req body, query, or param in that order.
       let parse = req.query[param] || req.params[param];
       if (req.body && req.body[param]) {
@@ -44,8 +43,7 @@ function runOp(op, params, api) {
     });
 
     // Call the op with arguments object we built
-    req.permitStore[op](args, function (err, result) {
-
+    req.permitStore[op](args, (err, result) => {
       // Validation errors may occur here
       if (err) {
         return next(err);
@@ -88,15 +86,13 @@ function runOp(op, params, api) {
 
 // HACK Treating this module as a singleton...
 // Could break if the module doesn't get cached...
-var map = new Map();
+const map = new Map();
 exports.map = map;
 exports.list = function listSuites(req, res, next) {
-
   // De-Mapify the list in to an object
-  var list = {};
+  const list = {};
 
-  map.forEach(function (set, key) {
-
+  map.forEach((set, key) => {
     if (!list[key]) {
       list[key] = [];
     }
@@ -149,9 +145,9 @@ exports.list = function listSuites(req, res, next) {
  *     each group in permitAPI.user.groups
  *       li= group
  */
-exports.readAll = function (req, res, next) {
-  req.permitStore.readAll(function (err, users) {
-      if (err) {return next(err);}
+exports.readAll = function expressPermitReadAll(req, res, next) {
+  req.permitStore.readAll((err, users) => {
+      if (err) { return next(err); }
 
       // Put the result on res.locals
       res.locals.permitAPI.users = users;
@@ -194,9 +190,9 @@ exports.readAll = function (req, res, next) {
  *     each group in permitAPI.user.groups
  *       li= group
  */
-exports.readAllGroups = function (req, res, next) {
-  req.permitStore.readAllGroups(function (err, groups) {
-      if (err) {return next(err);}
+exports.readAllGroups = function expressPermitReadAllGroups(req, res, next) {
+  req.permitStore.readAllGroups((err, groups) => {
+      if (err) { return next(err); }
 
       // Put the result on res.locals
       res.locals.permitAPI.groups = groups;
@@ -373,9 +369,11 @@ exports.destroy = runOp('destroy', ['username']);
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @param {Function} next
  * @example
- * app.get('/user/:username/addPermission/:suite?/:permission', permissions.api.addPermission, function(req, res, next) {
- *   res.render('/confirmation');
- *  });
+ * app.get('/user/:username/addPermission/:suite?/:permission', permissions.api.addPermission,
+ *   function(req, res, next) {
+ *     res.render('/confirmation');
+ *   }
+ * );
  * @example
  * h1 #{permitAPI.username} now has permission to #{permitAPI.suite} #{permitAPI.permission}!
  */
@@ -396,14 +394,17 @@ exports.addPermission = runOp(
  * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
  * @param {Function} next
  * @example
- * app.get('/setAdmin/:username', permissions.check.isOwner,p ermissions.api.setAdmin,  function(req, res, next) {
- *   res.render('/confirmation');
- *  });
+ * app.get('/setAdmin/:username', permissions.check.isOwner,p ermissions.api.setAdmin,
+ *   function(req, res, next) {
+ *     res.render('/confirmation');
+ *   }
+ * );
  * @example
  * h1 #{permitAPI.username} is now an admin!
  */
-exports.setAdmin = function(req, res, next) {
-  
+exports.setAdmin = function expressPermitSetAdmin(req, res, next) {
+  // FIXME where did this come from?
+  next(new Error('not implemented'));
 };
 
 // TODO document setSuperadmin

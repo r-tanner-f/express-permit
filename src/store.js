@@ -8,8 +8,8 @@
  * |____/ \__\___/|_|  \___|
  */
 
-var errors = require('./errors');
-var EventEmitter = require('events').EventEmitter;
+const errors = require('./errors');
+const EventEmitter = require('events').EventEmitter;
 
 class Store extends EventEmitter {
   constructor() {
@@ -22,7 +22,7 @@ class Store extends EventEmitter {
   }
 
   changeState() {
-    let newState = arguments[0];
+    const newState = arguments[0];
 
     if (this.state !== newState) {
       this.state = newState;
