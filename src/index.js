@@ -7,7 +7,9 @@
  * \___/_/\_\ .__/|_|  \___||___/___/     | .__/ \___|_|  |_| |_| |_|_|\__|
  *          |_|                           |_|
  *
- * This file is the starting point that exposes the module.
+ * +express-permit
+ *
+ * This file is the 'starting point' that exposes the module.
  * It contains the primary piece of middleware loaded by Express.
  */
 
@@ -22,8 +24,10 @@ const api = require('./api');
  *|  _  |  __/ | |_) |  __/ |  \__ \
  *|_| |_|\___|_| .__/ \___|_|  |___/
  *             |_|
+ * +helpers
  */
 
+// FIXME Could be a little more DRY...
 function isAdmin(permit) {
   return Boolean(
     permit === 'admin'      ||
@@ -117,8 +121,26 @@ function hasAction(action, suite, permit) {
  *|  _ <  __/\__ \ |  _  |  __/ | |_) |  __/ |  \__ \
  *|_| \_\___||___/ |_| |_|\___|_| .__/ \___|_|  |___/
  *                              |_|
+ * +reshelpers
+ */
+
+/**
+ * addLocalHelpers appends various helper functions to res.locals.permit.
+ * This is primarily used for Jade/Pug rendering.
+ * @example
+ * // Only show nav links if user has permissions to 'rides'.
+ * if permit.hasAny('rides')
+ *   a(href='/rollercoaster') Rollercoaster
  */
 function addLocalHelpers(res) {
+  if (!res.locals.permit) {
+    res.locals.permit = {};
+  }
+
+  res.locals.permit.isAdmin = () => isAdmin(res.locals.permitAPI.currentUser.permit);
+  res.locals.permit.isSuperadmin = () => isSuperadmin(res.locals.permitAPI.currentUser.permit);
+  res.locals.permit.isOwner = () => isOwner(res.locals.permitAPI.currentUser.permit);
+
   res.locals.permit = function hasActionMiddleware(action, suite, permissions) {
     return hasAction(
       action,
@@ -158,29 +180,18 @@ function addLocalHelpers(res) {
 
     return false;
   };
-
-  // Do these need to be getters? I guess it does prevent setting...
-  Object.defineProperty(res.locals.permit, 'isAdmin', {
-    get: () => isAdmin(res.locals.permitAPI.currentUser.permit),
-  });
-
-  Object.defineProperty(res.locals.permit, 'isSuperadmin', {
-    get: () => isSuperadmin(res.locals.permitAPI.currentUser.permit),
-  });
-
-  Object.defineProperty(res.locals.permit, 'isOwner', {
-    get: () => isOwner(res.locals.permitAPI.currentUser.permit),
-  });
 }
 
 /*
- * ___       _ _
- *|_ _|_ __ (_) |_
- * | || '_ \| | __|
- * | || | | | | |_
- *|___|_| |_|_|\__|
+ * __  __ _     _     _ _
+ *|  \/  (_) __| | __| | | _____      ____ _ _ __ ___
+ *| |\/| | |/ _` |/ _` | |/ _ \ \ /\ / / _` | '__/ _ \
+ *| |  | | | (_| | (_| | |  __/\ V  V / (_| | | |  __/
+ *|_|  |_|_|\__,_|\__,_|_|\___| \_/\_/ \__,_|_|  \___|
  *
- */
+ * +middleware
+ *
+ * Return middleware for Express to execute on each request. */
 
 /**
  * Configure express-permit middleware for handling and retrieving permissions.
@@ -196,7 +207,7 @@ function addLocalHelpers(res) {
  * Properties <code>store</code> and <code>username</code> are required.
  * @param {Object} options.store A permit store such as MemoryStore.
  * @param {Function} options.username
- * A function that returns the username (provided with req argument).
+ * A function that returns the username (called with req as only argument).
  * Example: <code>req => req.session.username</code>
  * @param {Object} [options.defaultPermit]
  * The default permit to assign 'new' users. Defaults to:
@@ -206,6 +217,7 @@ function addLocalHelpers(res) {
  * @public
  */
 function expressPermit(options) {
+  // Blow up if we don't get a username function
   if (typeof options.username !== 'function') {
     throw new TypeError(
       `express-permit requires a username function. Got ${options.username}.`
@@ -215,19 +227,10 @@ function expressPermit(options) {
   // Wrap the store for validation.
   const store = new StoreWrapper(options.store);
 
-  /*
-   * __  __ _     _     _ _
-   *|  \/  (_) __| | __| | | _____      ____ _ _ __ ___
-   *| |\/| | |/ _` |/ _` | |/ _ \ \ /\ / / _` | '__/ _ \
-   *| |  | | | (_| | (_| | |  __/\ V  V / (_| | | |  __/
-   *|_|  |_|_|\__,_|\__,_|_|\___| \_/\_/ \__,_|_|  \___|
-   *
-   *
-   * Return middleware for Express to execute on each request. */
   return function expressPermitMiddleware(req, res, next) {
     res.locals.permitAPI = {};
 
-    // Add the store to req for use in another middleware
+    // Add the store to req for direct access by user
     req.permitStore = store;
 
     // Execute the supplied username function to retrieve the username.
@@ -239,6 +242,7 @@ function expressPermit(options) {
       return;
     }
 
+    // See +reshelpers
     addLocalHelpers(res);
 
     // Attempt to retrieve the user's permit
@@ -252,26 +256,27 @@ function expressPermit(options) {
         };
 
         // and create the user.
-        store.create(
-          { username, user: defaultPermit },
-          createErr => {
-            if (createErr) { return next(createErr); }
+        store.create({ username, user: defaultPermit }, createErr => {
+          if (createErr) { return next(createErr); }
 
-            // Load the new user (kinda clunky...)
-            return store.rsop({ username }, (rsopErr, rsopUser) => {
-              if (rsopErr) { return next(rsopErr); }
+          // Load the new user (kinda clunky...)
+          return store.rsop({ username }, (rsopErr, rsopUser) => {
+            if (rsopErr) { return next(rsopErr); }
 
-              res.locals.permitAPI.currentUser = rsopUser;
+            res.locals.permitAPI.currentUser = rsopUser;
 
-              return next();
-            });
-          }
-        );
+            return next();
+          });
+        });
+
+      // If we receive anything other than a NotFound error
+      // when attempting to retrieve the user, pass to error handler
       } else if (err) {
         return next(err);
       }
 
-      // Otherwise, add the user to res.locals.permitAPI.currentUser.permit
+      // If user exists and is retrieved succesfully,
+      // add the user to res.locals.permitAPI.currentUser.permit
       res.locals.permitAPI.currentUser = user;
       return next();
     });
@@ -287,8 +292,10 @@ function expressPermit(options) {
  *  |_|\__,_|\__, |___/  \__,_|_| |_|\__,_|  \____|_| |_|\___|\___|_|\_\___/
  *           |___/
  *
- * This section contains the logic that checks if a user is permitted to perform
- * an action, and tracking the permissions created within the app.
+ * +tagsandchecks
+ *
+ * This section tracks permissions,
+ * and supplies middleware that checks if the user is permitted to perform action
  */
 
 /**
@@ -317,7 +324,10 @@ function expressPermit(options) {
  * });
  */
 function check(action, suite) {
-  // Add to tracking
+  // Add permission to tracking (for enumeration by user)
+  // This relies on the require cache... which has some caveats.
+  // See the Node.js documentation:
+  // https://nodejs.org/api/modules.html#modules_module_caching_caveats
   const map = api.map;
 
   if (!map.has(suite)) {
@@ -343,6 +353,14 @@ function check(action, suite) {
   };
 }
 
+/**
+ * Calls <code>next()</code> if user is an admin,
+ * and <code>next(new Forbidden())</code> if not.
+ * @example
+ * app.get('/managers-lounge', permissions.isAdmin, (req, res, next) => {
+ *   res.send('Break time!');
+ * });
+ */
 function isAdminMiddleware(req, res, next) {
   if (isAdmin(res.locals.permitAPI.currentUser.permit)) {
     return next();
@@ -351,6 +369,14 @@ function isAdminMiddleware(req, res, next) {
   return next(new errors.Forbidden(res, 'admin', 'is'));
 }
 
+/**
+ * Calls <code>next()</code> if user is a Superadmin,
+ * and <code>next(new Forbidden())</code> if not.
+ * @example
+ * app.get('/managers-lounge', permissions.isSuperadmin, (req, res, next) => {
+ *   res.send('Break time!');
+ * });
+ */
 function isSuperadminMiddleware(req, res, next) {
   if (isSuperadmin(res.locals.permitAPI.currentUser.permit)) {
     return next();
@@ -359,6 +385,14 @@ function isSuperadminMiddleware(req, res, next) {
   return next(new errors.Forbidden(res, 'superadmin', 'is'));
 }
 
+/**
+ * Calls <code>next()</code> if user is the Owner,
+ * and <code>next(new Forbidden())</code> if not.
+ * @example
+ * app.get('/managers-lounge', permissions.isOwner, (req, res, next) => {
+ *   res.send('Break time!');
+ * });
+ */
 function isOwnerMiddleware(req, res, next) {
   if (isOwner(res.locals.permitAPI.currentUser.permit)) {
     return next();
@@ -390,6 +424,7 @@ function tag(suite) {
  *| |___ >  <| |_) | (_) | |  | |_\__ \
  *|_____/_/\_\ .__/ \___/|_|   \__|___/
  *           |_|
+ * +exports
  */
 
 /**
@@ -421,6 +456,9 @@ module.exports.check.isOwner = isOwnerMiddleware;
  *| |_| |_| | |_) |  __/ (_| |  __/  _\__ \
  * \__|\__, | .__/ \___|\__,_|\___|_| |___/
  *     |___/|_|
+ * +typedefs
+ *
+ * These are only here for the benefit of JSDocs.
  */
 
 /**
