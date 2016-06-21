@@ -1,4 +1,0 @@
-{
-	"preset": "airbnb",
-  "maximumLineLength": {"value": 80, "allExcept": ["comments"] }
-}
