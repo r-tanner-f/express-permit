@@ -8,56 +8,58 @@
  *|_____|_|  |_|  \___/|_|      |_|\___||___/\__|___/
  */
 
-var chai      = require('chai');
-var dirtyChai = require('dirty-chai');
-var expect    = chai.expect;
+/* eslint-disable mocha/no-synchronous-tests */
+
+const chai      = require('chai');
+const dirtyChai = require('dirty-chai');
+const expect    = chai.expect;
 chai.use(dirtyChai);
 
-var async = require('async');
+const async = require('async');
 
-var expressPermit = require('../');
-var BadRequest = require('../src').error.BadRequest;
-var StoreWrapper = require('../src/wrapper');
-var validation = require('../src/validation');
-var validators = validation.validators;
+const expressPermit = require('../');
+const BadRequest = require('../src').error.BadRequest;
+const StoreWrapper = require('../src/wrapper');
+const validation = require('../src/validation');
+const validators = validation.validators;
 
 // Collect all the errors instead of the results
 function reverse(callback) {
-  return function (err, result) {
+  return (err, result) => {
     callback(result, err);
   };
 }
 
-describe('Error handling:', function () {
+describe('Error handling:', () => {
   // Begin validation ==========================================================
 
-  describe('Validation', function () {
-    it('Error should pass single messages through', function () {
-      var err = new BadRequest('just the one message!');
+  describe('Validation', () => {
+    it('Error should pass single messages through', () => {
+      const err = new BadRequest('just the one message!');
       expect(err.toString()).to.equal(
         'ValidationError -- just the one message!'
       );
     });
 
-    it('of permission should require a string', function () {
+    it('of permission should require a string', () => {
       expect(validators.permission()).to.equal(
         'Permission must be a string. Got undefined'
       );
     });
 
-    it('of suite should require a string', function () {
+    it('of suite should require a string', () => {
       expect(validators.suite()).to.equal(
         'Suite must be a string. Got undefined'
       );
     });
 
-    it('of group should require a string', function () {
+    it('of group should require a string', () => {
       expect(validators.group()).to.equal(
         'Group must be a string. Got undefined'
       );
     });
 
-    it('should detect a suite that is not an object', function () {
+    it('should detect a suite that is not an object', () => {
       expect(validators.permissions({
         bad: [],
       })).to.deep.equal(
@@ -72,7 +74,7 @@ describe('Error handling:', function () {
       );
     });
 
-    it('should detect a bad key value pair under permissions', function () {
+    it('should detect a bad key value pair under permissions', () => {
       expect(validators.permissions(
         { someSuite: { bad: 'bad' } }
       )).to.deep.equal(
@@ -84,27 +86,27 @@ describe('Error handling:', function () {
   // End validation ------------------------------------------------------------
 
   // Begin express-permit ======================================================
-  describe('express-permit', function () {
+  describe('express-permit', () => {
     it('should TypeError when not provided with a username function',
-       function () {
+       () => {
          expect(expressPermit).to.throw(TypeError);
        }
       );
-    it('should next(err) any store read errors', function (done) {
-      var middleware = expressPermit({
+    it('should next(err) any store read errors', done => {
+      const middleware = expressPermit({
         username: () => 'foo',
         store: {
           error: {
-            NotFound: function () {},
+            NotFound: () => {},
           },
           state: 'connected',
-          rsop: function (u, cb) {
+          rsop: (u, cb) => {
             cb('Oh noes!');
           },
         },
       });
 
-      middleware({}, { locals: {} }, function (err) {
+      middleware({}, { locals: {} }, err => {
         expect(err).to.equal('Oh noes!');
         done();
       });
@@ -114,17 +116,17 @@ describe('Error handling:', function () {
   // End express-permit --------------------------------------------------------
 
   // Begin API =================================================================
-  describe('API', function () {
+  describe('API', () => {
     it(
       'should next an Error if the underlying store returns an error',
-      function (done) {
-        var req = {
+      done => {
+        const req = {
           query: {},
           params: {
             username: 'foo',
           },
           permitStore: {
-            read: function (u, cb) {
+            read: (u, cb) => {
               cb('whoops!');
             },
           },
@@ -136,7 +138,7 @@ describe('Error handling:', function () {
               permitAPI: {},
             },
           },
-          function (err) {
+          err => {
             expect(err).to.exist();
             expect(err).to.equal('whoops!');
             done();
@@ -149,9 +151,9 @@ describe('Error handling:', function () {
   // End API -------------------------------------------------------------------
   //
   // Begin memory ==============================================================
-  describe('In memory permit store', function () {
-    var MemoryPermitStore = expressPermit.MemoryPermitStore(expressPermit);
-    var memory = new MemoryPermitStore(
+  describe('In memory permit store', () => {
+    const MemoryPermitStore = expressPermit.MemoryPermitStore(expressPermit);
+    const memory = new MemoryPermitStore(
       {
         someUser: {
           permissions: {},
@@ -165,13 +167,13 @@ describe('Error handling:', function () {
       }
     );
 
-    it('should throw a TypeError if initialized improperly', function () {
-      var usersArray = function () {
-        new expressPermit.InMemoryPermits([]); //jshint ignore:line
+    it('should throw a TypeError if initialized improperly', () => {
+      const usersArray = () => {
+        new expressPermit.InMemoryPermits([]); // eslint-disable-line no-new
       };
 
-      var groupsArray = function () {
-        new expressPermit.InMemoryPermits(undefined, []); //jshint ignore:line
+      const groupsArray = () => {
+        new expressPermit.InMemoryPermits(undefined, []); // eslint-disable-line no-new
       };
 
       expect(usersArray).to.throw(TypeError);
@@ -179,8 +181,8 @@ describe('Error handling:', function () {
     });
 
     it('should throw a Conflict error when creating a user that already exists',
-       function (done) {
-         memory.create('someUser', undefined, function (err) {
+       done => {
+         memory.create('someUser', undefined, err => {
            expect(err).to.be.an.instanceof(memory.error.Conflict);
            expect(err.message).to.equal('User already exists');
            done();
@@ -190,8 +192,8 @@ describe('Error handling:', function () {
 
     it(
       'should throw a Conflict error when creating a group that already exists',
-      function (done) {
-        memory.createGroup('someGroup', undefined, function (err) {
+      done => {
+        memory.createGroup('someGroup', undefined, err => {
           expect(err).to.be.an.instanceof(memory.error.Conflict);
           expect(err.message).to.equal('Group already exists');
           done();
@@ -200,8 +202,8 @@ describe('Error handling:', function () {
     );
     it(
       'should throw a Conflict when readding a user to a group',
-      function (done) {
-        memory.addGroup('someUser', 'someGroup', function (err) {
+      done => {
+        memory.addGroup('someUser', 'someGroup', err => {
           expect(err).to.be.an.instanceof(memory.error.Conflict);
           expect(err.message).to.equal('User is already in group');
           done();
@@ -209,13 +211,12 @@ describe('Error handling:', function () {
       }
     );
     it('should throw a NotFound when user/group is not found',
-      function (done) {
-
-        var tests = [
+      done => {
+        const tests = [
           callback => memory.update('notfound', undefined, reverse(callback)),
           callback => memory.destroy('notfound', reverse(callback)),
-          callback => memory.addPermission(
-            'notfound', undefined, undefined, reverse(callback)
+          callback => memory.updatePermissions(
+            'notfound', undefined, reverse(callback)
           ),
           callback => memory.addGroup('notfound', undefined, reverse(callback)),
           callback => memory.addGroup(
@@ -234,9 +235,9 @@ describe('Error handling:', function () {
           callback => memory.destroyGroup('notfound', reverse(callback)),
         ];
 
-        async.parallel(tests, function (err, result) {
+        async.parallel(tests, (err, result) => {
           expect(err).to.not.exist();
-          result.forEach(function (r, index) {
+          result.forEach((r, index) => {
             if (!(r instanceof memory.error.NotFound)) {
               throw new Error(`Failure: ${tests[index]}. Got: ${r}}`);
             }
@@ -250,38 +251,38 @@ describe('Error handling:', function () {
   // End memory ----------------------------------------------------------------
 
   // Begin StoreWrapper ========================================================
-  describe('StoreWrapper', function () {
-    var MemoryPermitStore = expressPermit.MemoryPermitStore(expressPermit);
-    var store = new StoreWrapper(new MemoryPermitStore());
+  describe('StoreWrapper', () => {
+    const MemoryPermitStore = expressPermit.MemoryPermitStore(expressPermit);
+    const store = new StoreWrapper(new MemoryPermitStore());
 
-    it('should defer ops until store is connected', function (done) {
+    it('should defer ops until store is connected', function deferTest(done) {
       this.timeout(0);
-      var DeferedMemoryStore = expressPermit.MemoryPermitStore(expressPermit);
-      var dcdStore = new StoreWrapper(new DeferedMemoryStore(
+      const DeferedMemoryStore = expressPermit.MemoryPermitStore(expressPermit);
+      const dcdStore = new StoreWrapper(new DeferedMemoryStore(
         {
           someUser: 'owner',
         }
       ));
       dcdStore.store.changeState('disconnected');
 
-      dcdStore.readAll(function (err, result) {
+      dcdStore.readAll((err, result) => {
         expect(result).to.deep.equal({ someUser: 'owner' });
         done();
       });
 
-      setTimeout(function () {
+      setTimeout(() => {
         dcdStore.store.changeState('connected');
       }, 100);
     });
 
-    it('should throw when no callback is supplied', function () {
-      var fn = function () {store.create();};
+    it('should throw when no callback is supplied', () => {
+      const fn = () => store.create();
 
       expect(fn).to.throw(Error, /Callback is required/);
     });
 
-    it('should catch errors and return them in callback', function () {
-      store.read({ username: 123 }, function (err) {
+    it('should catch errors and return them in callback', () => {
+      store.read({ username: 123 }, err => {
         expect(err).to.be.an.instanceof(BadRequest);
         expect(err).to.deep.equal({
           message: 'Username must be a string. Got a number: 123.',

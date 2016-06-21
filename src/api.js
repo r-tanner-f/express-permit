@@ -6,6 +6,9 @@
  *   / _ \ | |_) | |
  *  / ___ \|  __/| |
  * /_/   \_\_|  |___|
+ *
+ * +api
+ *
  */
 
 /**
@@ -56,6 +59,12 @@ function runOp(op, params, api) {
   };
 }
 
+
+// HACK Treating this module as a singleton...
+// Could break if the module doesn't get cached...
+const map = new Map();
+exports.map = map;
+
 /**
  * Build a list of all permissions used in the app.
  * @param {Object} req
@@ -83,11 +92,6 @@ function runOp(op, params, api) {
  *      each permission in permissions
  *        li= permission
  */
-
-// HACK Treating this module as a singleton...
-// Could break if the module doesn't get cached...
-const map = new Map();
-exports.map = map;
 exports.list = function listSuites(req, res, next) {
   // De-Mapify the list in to an object
   const list = {};
@@ -356,31 +360,6 @@ exports.updatePermissions = runOp(
  * h1 #{permitAPI.username} baleted!
  */
 exports.destroy = runOp('destroy', ['username']);
-
-/**
- * Sets a user permission in a suite to true. Suite defaults to root.
- * @function
- * @param {Object} req
- * @param {Object} req.body∥query∥param
- * @param {String} req.body∥query∥param.username
- * @param {String} [req.body∥query∥param.suite]
- * @param {String} req.body∥query∥param.permission
- * @param {Object} res
- * Populates <code>res.locals.permitAPI</code> with parameters used and result (if any).
- * @param {Function} next
- * @example
- * app.get('/user/:username/addPermission/:suite?/:permission', permissions.api.addPermission,
- *   function(req, res, next) {
- *     res.render('/confirmation');
- *   }
- * );
- * @example
- * h1 #{permitAPI.username} now has permission to #{permitAPI.suite} #{permitAPI.permission}!
- */
-exports.addPermission = runOp(
-  'addPermission',
-  ['username', 'permission', 'suite']
-);
 
 /**
  * Sets a user's permissions to the string 'admin', granting them access to everything.

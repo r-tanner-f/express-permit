@@ -6,6 +6,9 @@
  *|  _| | '__| '__/ _ \| '__| | |   | |/ _` / __/ __|/ _ \/ __|
  *| |___| |  | | | (_) | |    | |___| | (_| \__ \__ \  __/\__ \
  *|_____|_|  |_|  \___/|_|     \____|_|\__,_|___/___/\___||___/
+ *
+ * +errorclasses
+ *
  */
 
 const flatten = require('lodash.flattendeep');
@@ -36,7 +39,6 @@ exports.Forbidden = class PermissionsError {
     this.name = this.constructor.name;
     this.action  = action;
     this.suite = suite;
-    this.status_code = 403;
     this.permits = res.locals.permitAPI.currentUser.permit;
   }
 };

@@ -8,19 +8,19 @@
  * \__,_|_| |_| |_|\__,_|___/\___|_| \_\___/ \__,_|\__\___|_|
  */
 
-var Express = require('express');
+const Express = require('express');
 
-var amusementRouter     = Express.Router();
+const amusementRouter     = Express.Router();
 
-var amusement = require('../../src/index.js')
+const amusement = require('../../src/index.js')
 .tag('amusement');
 
 // Demonstrates a tracked tag with a default suite set
-amusementRouter.get('/rides', amusement('go-on-rides'), function (req, res) {
+amusementRouter.get('/rides', amusement('go-on-rides'), (req, res) => {
   res.send('whee!');
 });
 
-amusementRouter.get('/popcorn', amusement('eat-popcorn'), function (req, res) {
+amusementRouter.get('/popcorn', amusement('eat-popcorn'), (req, res) => {
   res.send('omnomnomnomnom');
 });
 

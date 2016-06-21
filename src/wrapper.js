@@ -327,41 +327,11 @@ class StoreWrapper {
     );
   }
 
-  // Permission Operations -----------------------------------------------------
-
-  /**
-   * Sets a single suite/permission pair to true.
-   * @memberof PermitStore
-   * @name addPermission
-   * @function
-   * @param {String} username
-   * @param {String} permission
-   * @param {String} [suite]
-   * @param {Function} callback
-   * @example
-   * app.get('/user/:username/addPermission/:suite?/:permission', function (req, res, next) {
-   *   req.permitStore.addPermission(
-   *     req.param.username, req.param.permission, req.param.suite, function (err, result) {
-   *       res.render('confirmation', {result: result});
-   *     }
-   *   );
-   * });
-   */
-  addPermission(args, callback) {
-    this._validateAndRun(
-      'addPermission',
-      args,
-      () => this.store.addPermission(
-        args.username, args.permission, args.suite, callback
-      ),
-      callback
-    );
-  }
-
   // Group Operations ----------------------------------------------------------
 
   /**
    * Updates a user's groups
+   * @memberof PermitStore
    * @name updateGroups
    * @function
    * @param {String} username
@@ -488,7 +458,7 @@ class StoreWrapper {
   /**
    * Updates a group
    * @memberof PermitStore
-   * @name createGroup
+   * @name updateGroup
    * @function
    * @param {String} group
    * @param {Object} permissions

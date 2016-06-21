@@ -13,6 +13,13 @@
  * It contains the primary piece of middleware loaded by Express.
  */
 
+/**
+ * Express middleware for fine-grained permissions
+ * @module express-permit
+ */
+
+const EventEmitter = require('events').EventEmitter;
+
 const StoreWrapper = require('./wrapper');
 const errors = require('./errors');
 const api = require('./api');
@@ -127,6 +134,7 @@ function hasAction(action, suite, permit) {
 /**
  * addLocalHelpers appends various helper functions to res.locals.permit.
  * This is primarily used for Jade/Pug rendering.
+ * @private
  * @example
  * // Only show nav links if user has permissions to 'rides'.
  * if permit.hasAny('rides')
@@ -216,7 +224,7 @@ function addLocalHelpers(res) {
  * @static
  * @public
  */
-function expressPermit(options) {
+function middleware(options) {
   // Blow up if we don't get a username function
   if (typeof options.username !== 'function') {
     throw new TypeError(
@@ -354,6 +362,8 @@ function check(action, suite) {
 }
 
 /**
+ * @name isAdmin
+ * @description
  * Calls <code>next()</code> if user is an admin,
  * and <code>next(new Forbidden())</code> if not.
  * @example
@@ -370,6 +380,8 @@ function isAdminMiddleware(req, res, next) {
 }
 
 /**
+ * @name isSuperadmin
+ * @description
  * Calls <code>next()</code> if user is a Superadmin,
  * and <code>next(new Forbidden())</code> if not.
  * @example
@@ -386,6 +398,8 @@ function isSuperadminMiddleware(req, res, next) {
 }
 
 /**
+ * @name isOwner
+ * @description
  * Calls <code>next()</code> if user is the Owner,
  * and <code>next(new Forbidden())</code> if not.
  * @example
@@ -404,6 +418,7 @@ function isOwnerMiddleware(req, res, next) {
 /**
  * Returns a tagged permit check (See <code>check</code> function).
  * Used for setting a default suite.
+ * @param {String} suite
  * @example
  * var app    = Express.Router();
  * const permit = require('express-permit').tag('amusement');
@@ -416,6 +431,39 @@ function tag(suite) {
   return action => check(action, suite);
 }
 
+/*
+ *  ____  _
+ * / ___|| |_ ___  _ __ ___
+ * \___ \| __/ _ \| '__/ _ \
+ *  ___) | || (_) | | |  __/
+ * |____/ \__\___/|_|  \___|
+ *
+ * +store
+ */
+
+
+/**
+ * Base class used for creating new data stores
+ */
+class Store extends EventEmitter {
+  constructor() {
+    super();
+    this.error = {};
+    this.error.NotFound = errors.NotFound;
+    this.error.Conflict = errors.Conflict;
+
+    this.state = 'disconnected';
+  }
+
+  changeState() {
+    const newState = arguments[0];
+
+    if (this.state !== newState) {
+      this.state = newState;
+      this.emit.apply(this, arguments);
+    }
+  }
+}
 
 /*
  * _____                       _
@@ -427,17 +475,13 @@ function tag(suite) {
  * +exports
  */
 
-/**
- * Express middleware for fine-grained permissions
- * @module express-permit
- */
-module.exports = expressPermit;
+module.exports = middleware;
 
 module.exports.error = errors;
 
 module.exports.api = api;
 
-module.exports.Store = require('./store');
+module.exports.Store = Store;
 module.exports.MemoryPermitStore = require('./memory');
 module.exports._wrapper = StoreWrapper;
 

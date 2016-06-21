@@ -8,39 +8,37 @@
  * /_/   \_\_|  |___|   |_|\___||___/\__|___/
  */
 
-var util           = require('util'); //jshint ignore:line
-
-var chai      = require('chai');
-var dirtyChai = require('dirty-chai');
-var expect    = chai.expect;
+const chai      = require('chai');
+const dirtyChai = require('dirty-chai');
+const expect    = chai.expect;
 chai.use(dirtyChai);
 
-var supertest = require('supertest');
-var rewire    = require('rewire');
+const supertest = require('supertest');
+const rewire    = require('rewire');
 
-var app = rewire('./fixtures/api');
+const app = rewire('./fixtures/api');
 
 function ok(test, done) {
-  return function (err, result) {
+  return (err, result) => {
     expect(result.text).to.equal('OK');
     expect(err).to.not.exist();
     if (Array.isArray(test)) {
-      test.forEach((t => t(err, result)));
-    } else {test(err, result);}
+      test.forEach(t => t(err, result));
+    } else { test(err, result); }
 
     done();
   };
 }
 
-describe('API', function () {
-  var users = app.__get__('users');
-  var groups = app.__get__('groups');
-  var someUser = users.someUser;
-  var agent = supertest.agent(app);
+describe('API', () => {
+  const users = app.__get__('users');
+  const groups = app.__get__('groups');
+  const someUser = users.someUser;
+  const agent = supertest.agent(app);
 
   // Validation ================================================================
-  it('should puke on invalid garbage', function (done) {
-    var user = {
+  it('should puke on invalid garbage', done => {
+    const user = {
       permit: {
         root: { 'enter-park': 'whaaaarrrrgaaarbbbllll' },
       },
@@ -54,24 +52,24 @@ describe('API', function () {
 
   // readAll ===================================================================
 
-  it('should read all users', function (done) {
+  it('should read all users', done => {
     agent
     .get('/users')
     .expect(200)
-    .end(function (err, result) {
-      if (err) {throw err;}
+    .end((err, result) => {
+      if (err) { throw err; }
 
       expect(result.body).to.deep.equal(users);
       done();
     });
   });
 
-  it('should read all groups', function (done) {
+  it('should read all groups', done => {
     agent
     .get('/groups')
     .expect(200)
-    .end(function (err, result) {
-      if (err) {throw err;}
+    .end((err, result) => {
+      if (err) { throw err; }
 
       expect(result.body).to.deep.equal(groups);
       done();
@@ -80,8 +78,8 @@ describe('API', function () {
 
   // Users =====================================================================
 
-  it('should create a user', function (done) {
-    var body = {
+  it('should create a user', done => {
+    const body = {
       user: {
         permissions: {
           root: { 'enter-park': true },
@@ -100,22 +98,22 @@ describe('API', function () {
     ));
   });
 
-  it('should read a user', function (done) {
+  it('should read a user', done => {
     agent
     .get('/user/staticUser')
     .expect(200)
-    .end(function (err, result) {
+    .end((err, result) => {
       if (err) throw err;
       expect(result.body).to.deep.equal(users.staticUser);
       done();
     });
   });
 
-  it('should get the rsop for a user', function (done) {
+  it('should get the rsop for a user', done => {
     agent
     .get('/user/rsop/rsopUser')
     .expect(200)
-    .end(function (err, result) {
+    .end((err, result) => {
       if (err) throw err;
       expect(result.body.permit).to.deep.equal({
         'block-test': { 'block-me': false },
@@ -125,15 +123,15 @@ describe('API', function () {
     });
   });
 
-  it('should update a user', function (done) {
-    var update = {
-      user: { permissions: { root: { updated: true } }, groups: [], },
+  it('should update a user', done => {
+    const update = {
+      user: { permissions: { root: { updated: true } }, groups: [] },
     };
     agent
     .put('/user/updatableUser')
     .send(update)
     .expect(200)
-    .end(function (err, result) {
+    .end((err, result) => {
       expect(result.err).to.not.exist();
       expect(err).to.not.exist();
 
@@ -142,18 +140,18 @@ describe('API', function () {
     });
   });
 
-  it('should delete a user', function (done) {
+  it('should delete a user', done => {
     agent
     .delete('/user/deletableUser')
     .expect(200)
-    .end(function (err) {
+    .end(err => {
       if (err) throw err;
       expect(users.deletableUser).to.not.exist();
       done();
     });
   });
 
-  it('should set a user to admin'); /*,  function (done) {
+  it('should set a user to admin'); /* ,  function (done) {
     agent
     .get('/setAdmin/nonAdmin')
     .expect(200)
@@ -165,7 +163,7 @@ describe('API', function () {
   });
  */
 
-  it('should set a user to owner'); /*, function (done) {
+  it('should set a user to owner'); /* , function (done) {
     agent
     .get('/setOwner/nonOwner')
     .expect(200)
@@ -176,21 +174,9 @@ describe('API', function () {
     });
   }); */
 
-  // Permission Operations -----------------------------------------------------
-
-  it('should NOT default suite', function (done) {
-    agent
-    .get('/addPermission/someUser/add-me')
-    .expect(400)
-    .end(function (err) {
-      if (err) throw err;
-      done();
-    });
-  });
-
   // Group Operations ----------------------------------------------------------
 
-  it('should add a group to a user', function (done) {
+  it('should add a group to a user', done => {
     agent
     .get('/addGroup/someUser/join-me')
     .expect(200)
@@ -200,7 +186,7 @@ describe('API', function () {
     ));
   });
 
-  it('should remove a user from a group', function (done) {
+  it('should remove a user from a group', done => {
     agent
     .get('/removeGroup/someUser/remove-me')
     .expect(200)
@@ -210,7 +196,7 @@ describe('API', function () {
     ));
   });
 
-  it('should update a user\'s groups', function (done) {
+  it('should update a user\'s groups', done => {
     agent
     .put('/updateGroups/someUser')
     .send({ groups: ['updated-all'] })
@@ -224,8 +210,8 @@ describe('API', function () {
   // Groups ====================================================================
 
   // CRUD ----------------------------------------------------------------------
-  it('should create a group', function (done) {
-    var group = {
+  it('should create a group', done => {
+    const group = {
       permissions: {},
     };
     agent
@@ -238,19 +224,19 @@ describe('API', function () {
     ));
   });
 
-  it('should read a group', function (done) {
+  it('should read a group', done => {
     agent
     .get('/group/read-me')
     .expect(200)
-    .end(function (err, result) {
+    .end((err, result) => {
       expect(err).to.not.exist();
       expect(result.body).to.deep.equal(groups['read-me']);
       done();
     });
   });
 
-  it('should update a group', function (done) {
-    var update = {
+  it('should update a group', done => {
+    const update = {
       permissions: { root: { updated: true } },
     };
     agent
@@ -263,7 +249,7 @@ describe('API', function () {
     ));
   });
 
-  it('should delete a group', function (done) {
+  it('should delete a group', done => {
     agent
     .delete('/group/delete-me')
     .expect(200)

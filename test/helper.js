@@ -9,32 +9,32 @@
  *             |_|
  */
 
-var chai           = require('chai');
-var dirtyChai      = require('dirty-chai');
-var expect         = chai.expect;
+const chai           = require('chai');
+const dirtyChai      = require('dirty-chai');
+const expect         = chai.expect;
 chai.use(dirtyChai);
 
+function login(user, agent, callback) {
+  agent
+  .get(`/login/${user}`)
+  .expect(200)
+  .end(err => {
+    if (err) throw err;
+    callback();
+  });
+}
+
 exports.testTree = function testTree(agent, expectedTree, done) {
-  login('awesome-user', agent, function () {
+  login('awesome-user', agent, () => {
     agent
     .get('/tree')
     .expect(200)
-    .end(function (err, res) {
+    .end((err, res) => {
       expect(err).to.not.exist();
       expect(res.body).to.deep.equal(expectedTree);
       done();
     });
   });
 };
-
-function login(user, agent, callback) {
-  agent
-  .get('/login/' + user)
-  .expect(200)
-  .end(function (err) {
-    if (err) throw err;
-    callback();
-  });
-}
 
 exports.login = login;

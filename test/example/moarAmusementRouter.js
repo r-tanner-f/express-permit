@@ -1,13 +1,13 @@
 'use strict';
 
-var Express = require('express');
-var moarAmusementRouter = Express.Router();
+const Express = require('express');
+const moarAmusementRouter = Express.Router();
 
-var moarAmusement = require('../../src/index.js')
+const moarAmusement = require('../../src/index.js')
 .tag('moarAmusement');
 
 moarAmusementRouter.get('/games', moarAmusement('play-games'),
-  function (req, res) {
+  (req, res) => {
     res.send('I think these might be rigged...');
   }
 );

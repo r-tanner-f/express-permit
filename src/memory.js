@@ -79,6 +79,15 @@ module.exports = function memoryStore(expressPermit) {
       });
     }
 
+    updatePermissions(username, permissions, callback) {
+      if (!this.users[username]) {
+        return callback(new this.error.NotFound('User does not exist'));
+      }
+
+      this.users[username].permissions = permissions;
+      return callback();
+    }
+
     update(username, permit, callback) {
       if (!this.users[username]) {
         return callback(new this.error.NotFound('User does not exist'));
@@ -94,21 +103,6 @@ module.exports = function memoryStore(expressPermit) {
       }
 
       delete this.users[username];
-      return callback();
-    }
-
-  // Permission Operations -----------------------------------------------------
-
-    addPermission(username, permission, suite, callback) {
-      if (!this.users[username]) {
-        return callback(new this.error.NotFound('User does not exist'));
-      }
-
-      if (!this.users[username].permissions[suite]) {
-        this.users[username].permissions[suite] = {};
-      }
-
-      this.users[username].permissions[suite][permission] = true;
       return callback();
     }
 

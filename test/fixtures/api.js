@@ -8,19 +8,19 @@
  * /_/   \_\_|  |___| |_|   |_/_/\_\\__|\__,_|_|  \___||___/
  */
 
-var util = require('util');
+const util = require('util');
 
-var Express = require('express');
-var session = require('express-session');
+const Express = require('express');
+const session = require('express-session');
 
-var app = Express();
-var bodyParser = require('body-parser');
+const app = Express();
+const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
-var permissions = require('../../src/index.js');
-var MemoryPermitStore = permissions.MemoryPermitStore(permissions);
+const permissions = require('../../src/index.js');
+const MemoryPermitStore = permissions.MemoryPermitStore(permissions);
 
-var api = permissions.api;
+const api = permissions.api;
 
 app.use(session({
   secret: 'keyboard cat',
@@ -28,8 +28,7 @@ app.use(session({
   saveUninitialized: true,
 }));
 
-var users = {
-  //jscs: disable disallowSpaceAfterObjectKeys
+const users = {
   rsopUser: {
     permissions: {
       'block-test': { 'block-me': true },
@@ -57,7 +56,7 @@ var users = {
   nonOwner: {},
 };
 
-var groups = {
+const groups = {
   'join-me': {},
   'remove-me': {},
   'update-me': {},
@@ -79,9 +78,9 @@ app.use(permissions({
   username: req => req.session.username,
 }));
 
-app.get('/login/:user', function (req, res) {
+app.get('/login/:user', (req, res) => {
   req.session.username = req.params.user;
-  res.send('Logged in as ' + req.params.user);
+  res.send(`Logged in as ${req.params.user}`);
 });
 
 function ok(req, res) {
@@ -90,11 +89,11 @@ function ok(req, res) {
 
 // readAll =====================================================================
 
-app.get('/users', api.readAll, function (req, res) {
+app.get('/users', api.readAll, (req, res) => {
   res.send(res.locals.permitAPI.users);
 });
 
-app.get('/groups', api.readAllGroups, function (req, res) {
+app.get('/groups', api.readAllGroups, (req, res) => {
   res.send(res.locals.permitAPI.groups);
 });
 
@@ -102,11 +101,11 @@ app.get('/groups', api.readAllGroups, function (req, res) {
 
 app.post('/user/:username', api.create, ok);
 
-app.get('/user/:username', api.read, function (req, res) {
+app.get('/user/:username', api.read, (req, res) => {
   res.send(res.locals.permitAPI.user);
 });
 
-app.get('/user/rsop/:username', api.rsop, function (req, res) {
+app.get('/user/rsop/:username', api.rsop, (req, res) => {
   res.send(res.locals.permitAPI.user);
 });
 
@@ -115,10 +114,6 @@ app.delete('/user/:username', api.destroy, ok);
 
 app.get('/setAdmin/:username', api.setAdmin, ok);
 app.get('/setOwner/:username', api.setOwner, ok);
-
-// Permission Operations -------------------------------------------------------
-
-app.get('/addPermission/:username/:suite?/:permission', api.addPermission, ok);
 
 // Group Operations ------------------------------------------------------------
 
@@ -132,7 +127,7 @@ app.put('/updateGroups/:username', api.updateGroups, ok);
 
 app.post('/group/:group', api.createGroup, ok);
 
-app.get('/group/:group', api.readGroup, function (req, res) {
+app.get('/group/:group', api.readGroup, (req, res) => {
   res.send(res.locals.permitAPI.group);
 });
 
@@ -140,7 +135,7 @@ app.put('/group/:group', api.updateGroup, ok);
 app.delete('/group/:group', api.destroyGroup, ok);
 
 // Error handler
-app.use(function (err, req, res, next) { //jshint ignore:line
+app.use((err, req, res, next) => {
   if (err instanceof permissions.error.BadRequest) {
     return res.status(400).send(err.toString());
   }
@@ -154,7 +149,7 @@ app.use(function (err, req, res, next) { //jshint ignore:line
   }
 
   console.error(util.inspect(err, { depth: null }));
-  next(err);
+  return next(err);
 });
 
 module.exports = app;

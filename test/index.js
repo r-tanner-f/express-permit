@@ -13,166 +13,182 @@
  */
 
 function clearCache() {
-  Object.keys(require.cache).forEach(function (key) {
+  Object.keys(require.cache).forEach(key => {
     delete require.cache[key];
   });
 }
 
-var supertest     = require('supertest');
-var async         = require('async');
+const supertest     = require('supertest');
+const async         = require('async');
+const expect        = require('chai').expect;
 
-var testTree      = require('./helper').testTree;
-var login         = require('./helper').login;
+const testTree      = require('./helper').testTree;
+const login         = require('./helper').login;
 
-var amusementPark = require('./example');
+const amusementPark = require('./example');
 
-describe('Example usage', function () {
-  it('shouldn\'t break 404s', function (done) {
+function test(user, tests, callback) {
+  const agent = supertest.agent(amusementPark);
 
+  login(user, agent, () => {
+    const asyncTests = tests.map(t => innerCallback => {
+      t(agent, (err, result) => {
+        if (err) { console.log(`This got borked: ${result.req.path}`); }
+
+        innerCallback(err, result);
+      });
+    });
+
+    async.series(asyncTests, callback);
+  });
+}
+
+describe('Example usage', () => {
+  it('shouldn\'t break 404s', done => {
     test('awesomeUser', [
-      function (awesomeUser, callback) {
+      (awesomeUser, callback) => {
         awesomeUser
         .get('/foo')
         .expect(404)
-        .end(function (err) {
+        .end(err => {
           if (err) return callback(new Error('Failed to cause 404'));
-          callback();
+          return callback();
         });
       },
-    ], function (err) {
-      if (err) throw err;
+    ], err => {
+      expect(err).to.not.exist();
       done();
     });
   });
 
   it('should handle explicit suite and root based allows',
-    function (done) {
+    done => {
     test('awesomeUser', [
-      (a, cb) => {a.get('/ticket-booth').expect(200, cb);},
+      (a, cb) => { a.get('/ticket-booth').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/games').expect(200, cb);},
+      (a, cb) => { a.get('/park/games').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/twiddle').expect(403, cb);},
+      (a, cb) => { a.get('/park/twiddle').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/shuffle-dirt').expect(403, cb);},
+      (a, cb) => { a.get('/park/shuffle-dirt').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/look-bored').expect(403, cb);},
-    ], function (err) {
-      if (err) {throw err;}
+      (a, cb) => { a.get('/park/look-bored').expect(403, cb); },
+    ], err => {
+      expect(err).to.not.exist();
 
       done();
     });
   });
 
   it('should allow access via group',
-    function (done) {
+    done => {
     test('awesomeUser', [
-      (a, cb) => {a.get('/park/rides').expect(200, cb);},
+      (a, cb) => { a.get('/park/rides').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/popcorn').expect(200, cb);},
-    ], function (err) {
-      if (err) {throw err;}
+      (a, cb) => { a.get('/park/popcorn').expect(200, cb); },
+    ], err => {
+      expect(err).to.not.exist();
 
       done();
     });
   });
 
   it('should differentiate between users (sanity check)',
-    function (done) {
+    done => {
     test('terribleUser', [
-      (a, cb) => {a.get('/ticket-booth').expect(200, cb);},
+      (a, cb) => { a.get('/ticket-booth').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/rides').expect(403, cb);},
+      (a, cb) => { a.get('/park/rides').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/popcorn').expect(403, cb);},
+      (a, cb) => { a.get('/park/popcorn').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/games').expect(403, cb);},
+      (a, cb) => { a.get('/park/games').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/twiddle').expect(200, cb);},
+      (a, cb) => { a.get('/park/twiddle').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/shuffle-dirt').expect(200, cb);},
+      (a, cb) => { a.get('/park/shuffle-dirt').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/look-bored').expect(200, cb);},
-    ], function (err) {
-      if (err) {throw err;}
+      (a, cb) => { a.get('/park/look-bored').expect(200, cb); },
+    ], err => {
+      expect(err).to.not.exist();
 
       done();
     });
   });
 
   it('should allow the owner access to everything',
-    function (done) {
+    done => {
     test('proprietor', [
-      (a, cb) => {a.get('/ticket-booth').expect(200, cb);},
+      (a, cb) => { a.get('/ticket-booth').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/rides').expect(200, cb);},
+      (a, cb) => { a.get('/park/rides').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/popcorn').expect(200, cb);},
+      (a, cb) => { a.get('/park/popcorn').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/games').expect(200, cb);},
+      (a, cb) => { a.get('/park/games').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/twiddle').expect(200, cb);},
+      (a, cb) => { a.get('/park/twiddle').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/shuffle-dirt').expect(200, cb);},
+      (a, cb) => { a.get('/park/shuffle-dirt').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/look-bored').expect(200, cb);},
-    ], function (err) {
-      if (err) {throw err;}
+      (a, cb) => { a.get('/park/look-bored').expect(200, cb); },
+    ], err => {
+      expect(err).to.not.exist();
 
       done();
     });
   });
 
   it('should handle an \'all\' permission',
-    function (done) {
+    done => {
     test('employee', [
-      (a, cb) => {a.get('/ticket-booth').expect(200, cb);},
+      (a, cb) => { a.get('/ticket-booth').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/rides').expect(200, cb);},
+      (a, cb) => { a.get('/park/rides').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/popcorn').expect(200, cb);},
+      (a, cb) => { a.get('/park/popcorn').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/games').expect(200, cb);},
+      (a, cb) => { a.get('/park/games').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/twiddle').expect(200, cb);},
+      (a, cb) => { a.get('/park/twiddle').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/shuffle-dirt').expect(200, cb);},
+      (a, cb) => { a.get('/park/shuffle-dirt').expect(200, cb); },
 
-      (a, cb) => {a.get('/park/look-bored').expect(403, cb);},
-    ], function (err) {
-      if (err) {throw err;}
+      (a, cb) => { a.get('/park/look-bored').expect(403, cb); },
+    ], err => {
+      expect(err).to.not.exist();
 
       done();
     });
   });
 
   it('should override via blocking',
-    function (done) {
+    done => {
     test('bankruptUser', [
-      (a, cb) => {a.get('/ticket-booth').expect(403, cb);},
+      (a, cb) => { a.get('/ticket-booth').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/rides').expect(403, cb);},
+      (a, cb) => { a.get('/park/rides').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/popcorn').expect(403, cb);},
+      (a, cb) => { a.get('/park/popcorn').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/games').expect(403, cb);},
+      (a, cb) => { a.get('/park/games').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/twiddle').expect(403, cb);},
+      (a, cb) => { a.get('/park/twiddle').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/shuffle-dirt').expect(403, cb);},
+      (a, cb) => { a.get('/park/shuffle-dirt').expect(403, cb); },
 
-      (a, cb) => {a.get('/park/look-bored').expect(403, cb);},
-    ], function (err) {
-      if (err) {throw err;}
+      (a, cb) => { a.get('/park/look-bored').expect(403, cb); },
+    ], err => {
+      expect(err).to.not.exist();
 
       done();
     });
   });
 
-  it('should produce an accurate permissions list', function (done) {
+  it('should produce an accurate permissions list', done => {
     clearCache();
-    var clearAmusementPark = require('./example');
-    var agent = supertest.agent(clearAmusementPark);
+    const clearAmusementPark = require('./example'); // eslint-disable-line global-require
+    const agent = supertest.agent(clearAmusementPark);
 
     testTree(agent, {
       amusement: [
@@ -193,23 +209,5 @@ describe('Example usage', function () {
       ],
     }, done);
   });
-
 });
 
-function test(user, tests, callback) {
-  var agent = supertest.agent(amusementPark);
-
-  login(user, agent, function () {
-    let asyncTests = tests.map(function (test) {
-      return function (callback) {
-        test(agent, function (err, result) {
-          if (err) {console.log(`This got borked: ${result.req.path}`);}
-
-          callback(err, result);
-        });
-      };
-    });
-
-    async.series(asyncTests, callback);
-  });
-}

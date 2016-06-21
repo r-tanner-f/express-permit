@@ -9,26 +9,25 @@
  *                          |_|
  */
 
-var Express = require('express');
-var session = require('express-session');
+const Express = require('express');
+const session = require('express-session');
 
-var app = Express();
+const app = Express();
 
-var amusementRouter = require('./amusementRouter');
-var moarAmusementRouter = require('./moarAmusementRouter');
-var boringRouter = require('./boringRouter');
-var moarBoringRouter = require('./moarBoringRouter');
+const amusementRouter = require('./amusementRouter');
+const moarAmusementRouter = require('./moarAmusementRouter');
+const boringRouter = require('./boringRouter');
+const moarBoringRouter = require('./moarBoringRouter');
 
-var permissions = require('../../src/index.js');
-var MemoryPermitStore = permissions.MemoryPermitStore(permissions);
-var check = permissions.check;
+const permissions = require('../../src/index.js');
+const MemoryPermitStore = permissions.MemoryPermitStore(permissions);
+const check = permissions.check;
 
-var users = {
-  //jscs: disable disallowSpaceAfterObjectKeys
+const users = {
   awesomeUser: {
     permissions: {
-      root: { 'enter-park': true, },
-      moarAmusement: { 'play-games': true, },
+      root: { 'enter-park': true },
+      moarAmusement: { 'play-games': true },
     },
     groups: [
       'park-attendee',
@@ -36,7 +35,7 @@ var users = {
   },
   terribleUser: {
     permissions: {
-      root:{ 'enter-park': true, },
+      root: { 'enter-park': true },
       boring: {
         'be-bored': true,
       },
@@ -56,21 +55,21 @@ var users = {
 
   employee: {
     permissions: {
-      root:{ 'enter-park': true, },
+      root: { 'enter-park': true },
     },
     groups: ['employees'],
   },
 
   bankruptUser: {
     permissions: {
-      root:{ 'enter-park': false, },
+      root: { 'enter-park': false },
       boring: 'all',
     },
     groups: ['block-me'],
   },
 };
 
-var groups = {
+const groups = {
   employees: {
     amusement: 'all',
     moarAmusement: 'all',
@@ -87,8 +86,6 @@ var groups = {
   },
 };
 
-//jscs: enable
-
 app.use(session({
   secret: 'keyboard cat',
   resave: 'false',
@@ -100,12 +97,12 @@ app.use(permissions({
   username: req => req.session.username,
 }));
 
-app.get('/login/:user', function (req, res) {
+app.get('/login/:user', (req, res) => {
   req.session.username = req.params.user;
-  res.send('Logged in as ' + req.params.user);
+  res.send(`Logged in as ${req.params.user}`);
 });
 
-app.get('/ticket-booth', check('enter-park', 'root'), function (req, res) {
+app.get('/ticket-booth', check('enter-park', 'root'), (req, res) => {
   res.send('you may enter!!');
 });
 
@@ -113,17 +110,17 @@ app.use('/park', check('enter-park', 'root'),
   amusementRouter, moarAmusementRouter, boringRouter, moarBoringRouter
 );
 
-app.get('/tree', permissions.api.list, function (req, res) {
+app.get('/tree', permissions.api.list, (req, res) => {
   res.json(res.locals.permitAPI.list);
 });
 
 // Error handler
-app.use(function (err, req, res, next) { //jshint ignore:line
+app.use((err, req, res, next) => {
   if (err instanceof permissions.error.Forbidden) {
     return res.status(403).send('Go away!!');
   }
 
-  next(err);
+  return next(err);
 });
 
 module.exports = app;

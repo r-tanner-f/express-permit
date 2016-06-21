@@ -35,13 +35,6 @@ const descriptors = {
 
   setOwner: ['username'],
 
-  // Permission Operations -----------------------------------------------------
-  addPermission: ['username', 'permission', 'suite'],
-
-  removePermission: ['username', 'permission', 'suite'],
-
-  blockPermission: ['username', 'permission', 'suite'],
-
   // Group Operations ----------------------------------------------------------
   addGroup: ['username', 'group'],
 

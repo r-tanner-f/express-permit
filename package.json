@@ -1,6 +1,6 @@
 {
-  "name": "@orchardcorset/express-permit",
-  "version": "1.0.6",
+  "name": "express-permit",
+  "version": "0.0.1",
   "description": "Easy permission handling and labeling",
   "main": "index.js",
   "scripts": {
@@ -13,7 +13,8 @@
   "keywords": [
     "Express",
     "Permissions",
-    "Authorization"
+    "Authorization",
+    "ACL"
   ],
   "author": "Tanner Faulkner",
   "license": "ISC",
@@ -36,15 +37,6 @@
   },
   "dependencies": {
     "lodash.clonedeep": "^4.0.4",
-    "lodash.flattendeep": "^4.0.0",
-    "traverse": "^0.6.6"
-  },
-  "config": {
-    "blanket": {
-      "data-cover-ecmaVersion": 6,
-      "pattern": [
-        "src"
-      ]
-    }
+    "lodash.flattendeep": "^4.0.0"
   }
 }
