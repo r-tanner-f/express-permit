@@ -4,7 +4,8 @@
   "description": "Easy permission handling and labeling",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha"
+    "test": "mocha",
+    "lint": "eslint src/*; eslint test/*"
   },
   "repository": {
     "type": "git",
@@ -24,15 +25,28 @@
   "homepage": "https://github.com/r-tanner-f/express-permit#readme",
   "devDependencies": {
     "async": "^1.5.2",
-    "blanket": "^1.1.9",
     "body-parser": "^1.14.2",
     "chai": "^3.4.1",
+    "coveralls": "^2.11.9",
     "dirty-chai": "^1.2.2",
+    "eslint": "^2.13.1",
+    "eslint-config-airbnb": "^9.0.1",
+    "eslint-plugin-import": "^1.9.2",
+    "eslint-plugin-jsx-a11y": "^1.5.3",
+    "eslint-plugin-mocha": "^3.0.0",
+    "eslint-plugin-react": "^5.2.2",
     "express": "^4.13.4",
+    "express-permit-ink-docstrap": "^1.1.2",
     "express-session": "^1.13.0",
+    "gulp": "^3.9.1",
+    "gulp-coveralls": "^0.1.4",
+    "gulp-eslint": "^2.0.0",
+    "gulp-istanbul": "^1.0.0",
+    "gulp-mocha": "^2.2.0",
     "ink-docstrap": "^1.1.2",
     "mocha": "^2.4.5",
     "rewire": "^2.5.1",
+    "rimraf": "^2.5.2",
     "supertest": "^1.1.0"
   },
   "dependencies": {

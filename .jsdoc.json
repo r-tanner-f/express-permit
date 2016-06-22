@@ -1,13 +1,12 @@
 {
   "opts": {
-    "template": "../../ink-docstrap/template",
+    "template": "node_modules/express-permit-ink-docstrap/template",
     "recurse": true,
     "tutorials": "tutorials",
     "destination": "./docs/"
   },
   "templates": {
     "systemName": "express-permit",
-    "footer": "<center>made with <3 by r-tanner-f <br> enjoy responsibly</center>",
     "includeDate": false,
     "navType": "inline",
     "linenums": true,

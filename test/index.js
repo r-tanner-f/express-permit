@@ -12,12 +12,6 @@
  * aside from the API functions. Fixtures are under test/example/*.js.
  */
 
-function clearCache() {
-  Object.keys(require.cache).forEach(key => {
-    delete require.cache[key];
-  });
-}
-
 const supertest     = require('supertest');
 const async         = require('async');
 const expect        = require('chai').expect;
@@ -186,7 +180,6 @@ describe('Example usage', () => {
   });
 
   it('should produce an accurate permissions list', done => {
-    clearCache();
     const clearAmusementPark = require('./example'); // eslint-disable-line global-require
     const agent = supertest.agent(clearAmusementPark);
 
