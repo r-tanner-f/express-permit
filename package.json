@@ -4,6 +4,7 @@
   "description": "Easy permission handling and labeling",
   "main": "index.js",
   "scripts": {
+    "build": "gulp build",
     "test": "mocha",
     "lint": "eslint src/*; eslint test/*"
   },
