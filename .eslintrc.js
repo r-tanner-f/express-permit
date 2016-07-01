@@ -17,7 +17,11 @@ module.exports = {
     rules: {
       'no-restricted-syntax': ['off', 'ForInStatement'],
       'no-underscore-dangle': 'off',
-      indent: 'off',
+      indent: ['error', 2],
+      'max-len': ['error', {
+        ignoreComments: true,
+        code: 100
+      }],
       'no-multi-spaces': 'off',
       'no-param-reassign': 'off',
       'new-cap': 'off',

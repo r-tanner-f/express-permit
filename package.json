@@ -4,8 +4,9 @@
   "description": "Easy permission handling and labeling",
   "main": "index.js",
   "scripts": {
+    "dev": "gulp --fatal=off",
     "build": "gulp build",
-    "test": "mocha",
+    "test": "gulp test",
     "lint": "eslint src/*; eslint test/*"
   },
   "repository": {
@@ -44,8 +45,13 @@
     "gulp-eslint": "^2.0.0",
     "gulp-istanbul": "^1.0.0",
     "gulp-mocha": "^2.2.0",
+    "gulp-plumber": "^1.1.0",
+    "gulp-sourcemaps": "^1.6.0",
     "ink-docstrap": "^1.1.2",
+    "jsdoc": "^3.4.0",
+    "minami": "^1.1.1",
     "mocha": "^2.4.5",
+    "mocha-unfunk-reporter": "^0.4.0",
     "rewire": "^2.5.1",
     "rimraf": "^2.5.2",
     "supertest": "^1.1.0"

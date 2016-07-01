@@ -9,7 +9,7 @@ module.exports = {
   rules: {
     'mocha/no-skipped-tests': 'error',
     'mocha/no-exclusive-tests': 'error',
-    'mocha/no-pending-tests': 'error',
+    //'mocha/no-pending-tests': 'error',
     'mocha/handle-done-callback': 'error',
     'mocha/no-synchronous-tests': 'error',
     'mocha/no-global-tests': 'error',

@@ -1,8 +1,7 @@
 {
   "opts": {
-    "template": "node_modules/express-permit-ink-docstrap/template",
+    "template": "node_modules/minami",
     "recurse": true,
-    "tutorials": "tutorials",
     "destination": "./docs/"
   },
   "templates": {
