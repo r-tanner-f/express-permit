@@ -11,7 +11,7 @@ Keep in mind this was written just a few months after io.js and Node.js merged. 
 I wanted to emulate the "just works" drop-in style of Express Session, along with support for multiple permissions stores as at the time I wasn't confident that storing permissions in MongoDB would be fast enough (it was more than sufficient).
 
 ```javascript
-const permissions = require('express-pertit')
+const permissions = require('express-permit')
 const MongoPermitStore = require('express-permit-mongodb')
 
 const store = new MongoPermitStore({
